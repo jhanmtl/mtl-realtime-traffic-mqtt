@@ -1,6 +1,5 @@
-import util
+import backend_utils
 import redis
-import json
 
 broker = 'mqtt.cgmu.io'
 port = 1883
@@ -9,19 +8,19 @@ data_template = {'vehicle-gap-time': [], 'vehicle-speed': [], 'vehicle-count': [
 
 
 def main():
-    df = util.read_csv('detectors-active.csv')
+    df = backend_utils.read_csv('detectors-active.csv')
     active_ids = df['id'].values.tolist()
-    active_topics = util.extract_topics(df)
+    active_topics = backend_utils.extract_topics(df)
 
     db = redis.Redis(host='localhost', port=6379, db=0)
-    util.initialize_db(db, active_ids, data_template)
-    incoming_data = util.initialize_incoming_data(active_ids, value_types)
+    backend_utils.initialize_db(db, active_ids, data_template)
+    incoming_data = backend_utils.initialize_incoming_data(active_ids, value_types)
 
-    client = util.connect_mqtt(broker, port)
+    client = backend_utils.connect_mqtt(broker, port)
     client.user_data_set([incoming_data, db])
     client.subscribe(active_topics)
 
-    client.on_message = util.on_message
+    client.on_message = backend_utils.on_message
     client.loop_forever()
 
 

@@ -2,3 +2,4 @@
 /data/inspections
 /.idea
 *.rdb
+/cred
