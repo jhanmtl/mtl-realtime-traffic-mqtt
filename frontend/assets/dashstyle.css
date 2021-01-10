@@ -2,21 +2,20 @@ html,body{
     height:100%;
     width: 100%;
     margin: 0px;
+    background: dimgray;
 }
 
 .base-div{
     height:100vh;
-    padding: 16px;
+    padding: 4px 16px 2px 16px;
 }
 
 .container-row{
-    /*border: 1px dashed red;*/
     height: 100%;
-    margin:0px
 }
 
 .full-vh-cols{
-    border: 1px dashed white;
+    /*border: 1px dashed white;*/
 }
 
 .title-stat-map-row{
@@ -24,56 +23,67 @@ html,body{
 }
 
 .title-row{
-    border: 1px dashed white;
+    /*border: 1px dashed white;*/
     height: 24%;
 }
 
 .key-stat-row{
-    border: 1px dashed white;
+    /*border: 1px dashed white;*/
     height: 60%;
 }
 
 .stat-col{
-    border: 1px dashed white;
+    /*border: 1px dashed white;*/
 }
 
 .substat-row{
-    border: 1px dashed white;
+    /*border: 1px dashed white;*/
     height: 50%;
 }
 
 .drop-down-row{
-    border: 1px dashed white;
+    /*border: 1px dashed white;*/
     height: 16%;
 }
 
 .map-col{
-    border: 1px dashed white;
+    /*border: 1px dashed white;*/
+    padding: 2px;
+    height: 100%;
 }
 
 .keystat-row{
-    border: 1px dashed white;
-    height: 30%;
+    /*border: 1px dashed white;*/
+    height: 100%;
 }
 
 .top-left-pane{
-    border: 1px dashed white;
+    /*border: 1px dashed white;*/
     height: 34%;
-    padding: 8px;
 }
 
 .speed-plot,.count-plot,.time-plot{
-    border: 1px dashed white;
+    /*border: 1px dashed white;*/
     height: 22%;
-    padding: 8px;
 }
 
 .historic-plot{
-    border: 1px dashed white;
+    /*border: 1px dashed white;*/
     height: 44%;
 }
 
 .graphs{
     height: 100%;
     width: 100%;
+}
+
+.card{
+    width: 100%;
+    margin: 2px;
+    border-radius: 0;
+}
+
+.wrap-div{
+    height: 100%;
+    margin: 0;
 }

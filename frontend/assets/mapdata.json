@@ -1,9 +1,9 @@
 {
-  "init-lat": 45.5409926,
-  "init-lon": -73.6421859,
+  "init-lat": 45.5649832411193,
+  "init-lon": -73.5236519160009,
   "bearing": 0,
-  "zoom":11,
-  "marker-color": "LightSkyBlue",
-  "marker-size": 20,
+  "zoom":12.5,
+  "marker-color": "#fc8803",
+  "marker-size": 15,
   "style": "dark"
 }

@@ -67,7 +67,7 @@ def init_map(df):
                             center={'lat': init_lat, 'lon': init_lon},
                             zoom=zoom,
                             color='id',
-                            style=style
+                            mapbox_style=style
                             )
     fig.update_mapboxes(
         bearing=bearing,
