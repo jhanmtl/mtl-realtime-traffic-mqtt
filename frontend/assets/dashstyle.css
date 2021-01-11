@@ -79,7 +79,7 @@ html,body{
 
 .card{
     width: 100%;
-    margin: 2px;
+    margin: 4px;
     border-radius: 0;
 }
 
@@ -87,3 +87,4 @@ html,body{
     height: 100%;
     margin: 0;
 }
+
