@@ -1,4 +1,5 @@
 import numpy as np
+import dash_table
 import plotly.graph_objects as go
 import plotly.express as px
 import dash_html_components as html
@@ -6,18 +7,99 @@ import dash_core_components as dcc
 import dash_bootstrap_components as dbc
 
 
-class CustomBar:
+class CustomTable:
     def __init__(self, config, card_title, target_card):
         self.config = config
         self.card = target_card
         self.cardheader = dbc.CardHeader(card_title, style={"textAlign": "center",
                                                             "padding": "0px",
                                                             "border": "0px",
-                                                            "color":self.config['textcolor'],
-                                                            "borderRadius":"0px"
+                                                            "color": self.config['textcolor'],
+                                                            "borderRadius": "0px"
+                                                            })
+        self.table = None
+
+    def set_data(self, df):
+        c = [{"name": i, "id": i} for i in df.columns]
+        self.table = dash_table.DataTable(data=df.to_dict('records'),
+                                          columns=c,
+                                          id="table",
+                                          style_cell={"textAlign": "center",
+                                                      "border": "0",
+                                                      "fontFamily": "Lato",
+                                                      "fontSize": "0.65rem",
+                                                      "background": self.config['bgcolor']},
+                                          cell_selectable=False,
+                                          style_cell_conditional=[{'if': {'column_id': c}, 'textAlign': 'left'} for c in
+                                                                  ['corner']])
+        self.card.children = [self.cardheader, self.table]
+
+
+class CustomScatter:
+    def __init__(self, config, card_title, target_card):
+        self.config = config
+        self.card = target_card
+        self.cardheader = dbc.CardHeader(card_title, style={"textAlign": "center",
+                                                            "padding": "0px",
+                                                            "border": "0px",
+                                                            "color": self.config['textcolor'],
+                                                            "borderRadius": "0px"
                                                             })
         self.graph = dcc.Graph(className="graphs")
         self.card.children = [self.cardheader, self.graph]
+        self.fig = None
+
+    def set_data(self, values, unit):
+        x = np.arange(len(values))
+        ticktext = [str(i) for i in values]
+        self.fig = px.scatter(x=x, y=values)
+        self.fig.update_traces(marker_color=self.config['capcolor'],
+                               marker_line_color=self.config['capcolor'],
+                               text=ticktext,
+                               # textposition="inside",
+                               textfont_color=self.config["textcolor"],
+                               mode="lines+markers",
+                               line=dict(color=self.config["barcolor"]),
+                               marker=dict(color=self.config["capcolor"])
+                               )
+
+        self.fig.update_layout(margin=self.config["margin"],
+                               xaxis=dict(tickvals=x,
+                                          ticktext=["" for i in range(len(x))],
+                                          title="time stamp",
+                                          color=self.config['textcolor'],
+                                          showgrid=False,
+                                          zeroline=False,
+                                          ),
+                               yaxis=dict(showgrid=False,
+                                          title=unit,
+                                          visible=False),
+                               paper_bgcolor=self.config['bgcolor'],
+                               plot_bgcolor=self.config['bgcolor'],
+                               showlegend=False,
+                               )
+
+
+        self.graph.figure = self.fig
+
+
+class CustomBar:
+    def __init__(self, config, card_title, target_card, graph_id,update_freq=1000):
+        self.config = config
+        self.card = target_card
+        self.cardheader = dbc.CardHeader(card_title, style={"textAlign": "center",
+                                                            "padding": "0px",
+                                                            "border": "0px",
+                                                            "color": self.config['textcolor'],
+                                                            "borderRadius": "0px"
+                                                            })
+        self.graph = dcc.Graph(className="graphs",id=graph_id)
+        self.interval=dcc.Interval(
+            id=graph_id+"-interval",
+            interval=update_freq,
+            n_intervals=0
+        )
+        self.card.children = [self.cardheader, self.graph,self.interval]
         self.fig = None
 
     def set_data(self, values, names, unit):
