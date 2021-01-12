@@ -1,4 +1,5 @@
 import dash
+import dash_table
 import dash_html_components as html
 import dash_core_components as dcc
 import dash_bootstrap_components as dbc
@@ -9,66 +10,74 @@ import plotly.graph_objects as go
 import frontend_utils
 import pandas as pd
 import numpy as np
+import json
+from layout_utils import CustomBar
 
-gmargin=dict(l=8,r=8,t=8,b=8)
+with open("./assets/bar_config.json", "r") as jfile:
+    bconfig = json.load(jfile)
 
 df = pd.read_csv("../data/detectors-active.csv")
 map_fig, map_data = frontend_utils.init_map(df)
-map_fig.update_layout(paper_bgcolor="gray", margin=dict(l=0,r=0,b=0,t=0))
-
-
+map_fig.update_layout(paper_bgcolor="gray", margin=dict(l=0, r=0, b=0, t=0))
 
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.DARKLY])
 layout, left_column, right_column = layout_utils.init_layout()
-right_column.get_subpanel_by_id('map-pane').children.figure=map_fig
+right_column.get_subpanel_by_id('map-pane').children.figure = map_fig
 
-cardheader=dbc.CardHeader("vehicle speed",style={"background":"#303030",
-                                                 "text-align":"center",
-                                                 "padding": 0,
-                                                 "border":0})
+stations = ["station {}".format(i + 1) for i in range(9)]
+speed_values = np.random.randint(10, 40, len(stations))
+count_values = np.random.randint(10, 40, len(stations))
+gap_values = np.random.randint(10, 40, len(stations))
+
+speed_card = left_column.get_subpanel_by_id("vspeed").children
+speedbar = CustomBar(bconfig, "speed dectected", speed_card)
+speedbar.set_data(speed_values, stations, "kmh")
+
+count_card = left_column.get_subpanel_by_id("vcount").children
+countbar = CustomBar(bconfig, "vehicles counted", count_card)
+countbar.set_data(count_values, stations, "cars")
+
+gap_card = left_column.get_subpanel_by_id("vgap").children
+gapbar = CustomBar(bconfig, "gap time between vehicles", gap_card)
+gapbar.set_data(gap_values, stations, "s")
+
+summary={
+    "station":(np.arange(len(stations))+1).tolist(),
+    "speed (kmh)":speed_values,
+    "count (cars)": count_values,
+    "gap time (s)":gap_values
+}
+
+summary=pd.DataFrame.from_dict(summary)
+summary["corner"]=df["corner_st2"]
+summary=summary[["station","corner","speed (kmh)","count (cars)","gap time (s)"]]
 
 
-speed_card=left_column.get_subpanel_by_id("vspeed").children
-speed_graph=dcc.Graph(id="speed-graph",className="graphs")
+# summary = pd.read_csv('https://raw.githubusercontent.com/plotly/datasets/master/solar.csv')
+# print(summary)
+c=[{"name": i, "id": i} for i in summary.columns]
+table=dash_table.DataTable(data=summary.to_dict('records'),
+                           columns=c,
+                           id="table",
+                           style_cell={"background":"{}".format(bconfig["bgcolor"]),"textAlign":"center","border":"0"},
+                           cell_selectable=False,
+                            style_cell_conditional=[
+                                    {
+                                        'if': {'column_id': c},
+                                        'textAlign': 'left'
+                                    } for c in ['corner']
+                                ]
+                           )
 
-speed_card.children=[cardheader,speed_graph]
+aux_card=left_column.get_subpanel_by_id("aux").children
+cardheader = dbc.CardHeader("detector metrics overview ", style={"textAlign": "center",
+                                                    "padding": "0px",
+                                                    "border": "0px",
+                                                    "color": bconfig['textcolor'],
+                                                    "borderRadius": "0px"
+                                                    })
 
-
-
-
-places=["Pie-IX","Letourneux","Viau","Dickson","Boussuet","de Boucherville", "Curatteau","des Futailles", "Haig"]
-x=np.arange(len(places))
-values=np.random.randint(10,40,len(places))
-cap=np.ones(len(values))*0.5
-
-fig=px.bar(x=x,y=values)
-fig.update_traces(marker_color="#2d4e4f",
-                  marker_line_color="#2d4e4f",
-                  text=[str(i)+" kmh" for i in values],
-                  textposition="inside",
-                  textfont_color="white",
-                  )
-
-fig2=go.Bar(
-    x=x,
-    y=cap,
-    marker_color="#00a99d",
-    marker_line_color="#00a99d"
-
-)
-
-fig.add_trace(fig2)
-fig.update_layout(margin=gmargin,
-                  xaxis=dict(tickvals=x,ticktext=["station "+str(i+1) for i in x],title=None,color="white"),
-                  yaxis=dict(visible=False),
-                  paper_bgcolor="#303030",
-                  plot_bgcolor="#303030",
-                  barmode="relative",
-                  showlegend=False,
-                  bargap=0.02
-                  )
-
-speed_graph.figure=fig
+aux_card.children=[cardheader,table]
 
 app.layout = layout
 

@@ -76,10 +76,14 @@ html,body{
     height: 100%;
     width: 100%;
 }
+#table{
+    color: lightgray;
+}
 
 .card{
     width: 100%;
     margin: 4px;
+    overflow-y: hidden;
     border-radius: 0;
 }
 

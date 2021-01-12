@@ -1,0 +1,13 @@
+{
+  "barcolor": "#2d4e4f",
+  "capcolor": "#00a99d",
+  "textcolor": "lightgray",
+  "bgcolor": "#303030",
+  "capsize": 0.5,
+  "margin": {
+    "l": 8,
+    "r": 8,
+    "t": 16,
+    "b": 16
+  }
+}

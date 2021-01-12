@@ -1,7 +1,61 @@
-import dash
+import numpy as np
+import plotly.graph_objects as go
+import plotly.express as px
 import dash_html_components as html
 import dash_core_components as dcc
 import dash_bootstrap_components as dbc
+
+
+class CustomBar:
+    def __init__(self, config, card_title, target_card):
+        self.config = config
+        self.card = target_card
+        self.cardheader = dbc.CardHeader(card_title, style={"textAlign": "center",
+                                                            "padding": "0px",
+                                                            "border": "0px",
+                                                            "color":self.config['textcolor'],
+                                                            "borderRadius":"0px"
+                                                            })
+        self.graph = dcc.Graph(className="graphs")
+        self.card.children = [self.cardheader, self.graph]
+        self.fig = None
+
+    def set_data(self, values, names, unit):
+        x = np.arange(len(values))
+        cap = np.ones(len(values)) * self.config['capsize']
+        ticktext = [str(i) + " " + unit for i in values]
+        self.fig = px.bar(x=x, y=values)
+        self.fig.update_traces(marker_color=self.config['barcolor'],
+                               marker_line_color=self.config['barcolor'],
+                               text=ticktext,
+                               textposition="inside",
+                               textfont_color=self.config["textcolor"],
+                               )
+
+        capfig = go.Bar(
+            x=x,
+            y=cap,
+            marker_color=self.config['capcolor'],
+            marker_line_color=self.config['capcolor']
+        )
+
+        self.fig.add_trace(capfig)
+
+        self.fig.update_layout(margin=self.config["margin"],
+                               xaxis=dict(tickvals=x,
+                                          ticktext=names,
+                                          title=None,
+                                          color=self.config['textcolor']),
+                               yaxis=dict(visible=False),
+                               paper_bgcolor=self.config['bgcolor'],
+                               plot_bgcolor=self.config['bgcolor'],
+                               barmode="relative",
+                               showlegend=False,
+                               bargap=0.02
+                               )
+
+        self.graph.figure = self.fig
+
 
 def init_layout():
     left_column = LeftColumn()
@@ -14,6 +68,7 @@ def init_layout():
         className="base-div")
 
     return layout, left_column, right_column
+
 
 class LeftColumn:
     def __init__(self):
@@ -39,14 +94,15 @@ class LeftColumn:
 class RightColumn:
     def __init__(self):
         title = TitlePane()
-        stat1 = dbc.Col(dbc.Row(card(),className="wrap-div"), className="stat-col", id="stat-1",style={"padding":0})
-        stat2 = dbc.Col(dbc.Row(card(),className="wrap-div"), className="stat-col", id="stat-2",style={"padding":0})
+        stat1 = dbc.Col(dbc.Row(card(), className="wrap-div"), className="stat-col", id="stat-1", style={"padding": 0})
+        stat2 = dbc.Col(dbc.Row(card(), className="wrap-div"), className="stat-col", id="stat-2", style={"padding": 0})
         stat3 = dbc.Row(card(), className="substat-row", id="stat-3")
         stat4 = dbc.Row(card(), className="substat-row", id="stat-4")
         drop = DropDown()
         mapp = MapPane()
         hist = HistoricPlot()
-        self.subpanels = [title.get_layout(), stat1, stat2, stat3, stat4, drop.get_layout(), mapp.get_layout(), hist.get_layout()]
+        self.subpanels = [title.get_layout(), stat1, stat2, stat3, stat4, drop.get_layout(), mapp.get_layout(),
+                          hist.get_layout()]
 
         self.layout = dbc.Col([
             dbc.Row([
@@ -82,7 +138,7 @@ class RightColumn:
 
 class MapPane:
     def __init__(self):
-        self.layout = dbc.Col(dcc.Graph(id="scatter_map",className="graphs"), className="map-col", id="map-pane")
+        self.layout = dbc.Col(dcc.Graph(id="scatter_map", className="graphs"), className="map-col", id="map-pane")
 
     def get_layout(self):
         return self.layout
@@ -110,6 +166,7 @@ class DropDown:
 
     def get_layout(self):
         return self.layout
+
 
 def card():
     return dbc.Card(className="card")
