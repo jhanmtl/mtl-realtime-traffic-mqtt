@@ -13,31 +13,41 @@ import os
 import redis
 
 
-class Detector:
-    def __init__(self, det_id, db):
-        self.det_id = det_id
-        self.db = db
+class RedisDB:
+    def __init__(self, host="localhost", port=6379, dbid=0):
+        self.db = redis.Redis(host=host, port=port, db=dbid)
+        self.keys = [k.decode() for k in self.db.keys()]
+        self.readings = {}
 
-        data = json.loads(db.get(self.det_id))
-        self.vspeed = data['vehicle-speed']
-        self.vtime = data['vehicle-gap-time']
-        self.vcount = data['vehicle-count']
-        self.utf = data['time']
+    def _update(self):
+        for k in self.keys:
+            self.readings[k] = json.loads(self.db.get(k))
 
-    def get_id(self):
-        return self.det_id
+    def latest_reading(self, value_type):
+        """
 
-    def get_utf(self):
-        return self.utf
+        :param value_type: one of the following strings 'vehicle-gap-time','vehicle-speed','vehicle-count','time'
+        :return:
+        """
+        self._update()
+        values = {}
+        for detector_id in self.readings:
+            values[detector_id] = self.readings[detector_id][value_type][-1]
 
-    def get_latest_speed(self):
-        return self.vspeed[-1]
+        return values
 
-    def get_latest_count(self):
-        return self.vcount[-1]
+    def n_latest_readings(self, value_type, n):
+        self._update()
+        values = {}
+        for detector_id in self.readings:
+            complete_readings = self.readings[detector_id][value_type]
+            leng = len(complete_readings)
+            if leng <= n:
+                values[detector_id] = complete_readings
+            else:
+                values[detector_id] = complete_readings[leng - n:leng]
 
-    def get_latest_gaptime(self):
-        return self.vtime[-1]
+        return values
 
 
 def init_map(df):
