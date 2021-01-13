@@ -17,35 +17,39 @@ class RedisDB:
     def __init__(self, host="localhost", port=6379, dbid=0):
         self.db = redis.Redis(host=host, port=port, db=dbid)
         self.keys = [k.decode() for k in self.db.keys()]
+        self.keys.sort()
         self.readings = {}
 
     def _update(self):
         for k in self.keys:
             self.readings[k] = json.loads(self.db.get(k))
 
-    def latest_reading(self, value_type):
+    def latest_readings(self, value_type):
         """
 
         :param value_type: one of the following strings 'vehicle-gap-time','vehicle-speed','vehicle-count','time'
         :return:
         """
         self._update()
-        values = {}
-        for detector_id in self.readings:
-            values[detector_id] = self.readings[detector_id][value_type][-1]
+        values = []
+
+        for k in self.keys:
+            values.append(self.readings[k][value_type][-1])
 
         return values
 
     def n_latest_readings(self, value_type, n):
         self._update()
-        values = {}
-        for detector_id in self.readings:
-            complete_readings = self.readings[detector_id][value_type]
+        values = []
+        for k in self.keys:
+            complete_readings = self.readings[k][value_type]
             leng = len(complete_readings)
             if leng <= n:
-                values[detector_id] = complete_readings
+                subreadings=complete_readings
             else:
-                values[detector_id] = complete_readings[leng - n:leng]
+                subreadings=complete_readings[leng - n:leng]
+
+            values.append(subreadings)
 
         return values
 

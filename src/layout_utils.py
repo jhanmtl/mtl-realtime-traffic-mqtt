@@ -84,7 +84,7 @@ class CustomScatter:
 
 
 class CustomBar:
-    def __init__(self, config, card_title, target_card, graph_id,update_freq=1000):
+    def __init__(self, config, card_title, target_card, graph_id,update_freq=60000):
         self.config = config
         self.card = target_card
         self.cardheader = dbc.CardHeader(card_title, style={"textAlign": "center",
@@ -137,6 +137,60 @@ class CustomBar:
                                )
 
         self.graph.figure = self.fig
+
+# class CountdownTimer:
+#     def __init__(self, config,card_title, target_card,update_freq=1000):
+#         self.config = config
+#         self.card = target_card
+#         self.cardheader = dbc.CardHeader(card_title, style={"textAlign": "center",
+#                                                             "padding": "0px",
+#                                                             "border": "0px",
+#                                                             "color": self.config['textcolor'],
+#                                                             "borderRadius": "0px"
+#                                                             })
+#         self.cardbody=dbc.CardBody()
+#         self.interval=dcc.Interval(
+#             id="countdown-timer-id",
+#             interval=update_freq,
+#             n_intervals=0
+#         )
+#         self.card.children = [self.cardheader,self.interval]
+#
+#     def set_data(self, values, names, unit):
+#         x = np.arange(len(values))
+#         cap = np.ones(len(values)) * self.config['capsize']
+#         ticktext = [str(i) + " " + unit for i in values]
+#         self.fig = px.bar(x=x, y=values)
+#         self.fig.update_traces(marker_color=self.config['barcolor'],
+#                                marker_line_color=self.config['barcolor'],
+#                                text=ticktext,
+#                                textposition="inside",
+#                                textfont_color=self.config["textcolor"],
+#                                )
+#
+#         capfig = go.Bar(
+#             x=x,
+#             y=cap,
+#             marker_color=self.config['capcolor'],
+#             marker_line_color=self.config['capcolor']
+#         )
+#
+#         self.fig.add_trace(capfig)
+#
+#         self.fig.update_layout(margin=self.config["margin"],
+#                                xaxis=dict(tickvals=x,
+#                                           ticktext=names,
+#                                           title=None,
+#                                           color=self.config['textcolor']),
+#                                yaxis=dict(visible=False),
+#                                paper_bgcolor=self.config['bgcolor'],
+#                                plot_bgcolor=self.config['bgcolor'],
+#                                barmode="relative",
+#                                showlegend=False,
+#                                bargap=0.02
+#                                )
+#
+#         self.graph.figure = self.fig
 
 
 def init_layout():
