@@ -5,12 +5,13 @@ import dash_core_components as dcc
 import layout_utils
 from dash.dependencies import Input, Output
 import plotly.express as px
+from plotly import graph_objects as go
 
 import frontend_utils
 import pandas as pd
 import numpy as np
 import json
-from layout_utils import CustomBar, CustomTable, CustomScatter, CountdownTimer
+from layout_utils import CustomBar, CustomTable, CustomScatter, CountdownSpinner
 
 with open("./assets/bar_config.json", "r") as jfile:
     plot_config = json.load(jfile)
@@ -48,31 +49,7 @@ gap_card = left_column.get_subpanel_by_id("vgap").children
 
 refresh_card = right_column.get_subpanel_by_id("stat-3").children
 
-# ------------------------------ to be refactored into a spinner class -------------------------------------------------
-header=dbc.CardHeader("seconds to update",style={"padding":"0","textAlign":"center"})
-
-fig = px.pie(names=["done","todo"],
-                 values=[60, 0],
-                 color_discrete_sequence=[plot_config["capcolor"], plot_config["barcolor"]],
-                 )
-fig.update_traces(textinfo="none",
-                  hole=0.9,
-                  sort=False)
-
-fig.update_layout(margin={"l": 8, "r": 8, "t": 16, "b": 16},
-                  paper_bgcolor=plot_config['bgcolor'],
-                  plot_bgcolor=plot_config['bgcolor'],
-                  showlegend=False,
-                  annotations=[dict(text="", font_color="white", font_size=16, x=0.5, y=0.5, showarrow=False)]
-                  )
-
-graph = dcc.Graph(id="pie-graph", className="graphs")
-graph.figure = fig
-
-interval=dcc.Interval(id="countdown-timer-id",interval=1000,n_intervals=0)
-# ------------------------------ to be refactored into a spinner class -------------------------------------------------
-
-refresh_card.children = [header,graph,interval]
+spinner = CountdownSpinner(plot_config, "seconds to next update", refresh_card, "pie-graph")
 
 speedbar = CustomBar(plot_config, "speed dectected", speed_card, "speed-live-graph")
 countbar = CustomBar(plot_config, "vehicles counted", count_card, "count-live-graph")
@@ -86,39 +63,95 @@ aux_card = left_column.get_subpanel_by_id("aux").children
 table = CustomTable(plot_config, "detector metrics summary", aux_card)
 table.set_data(summary)
 
-scatter_value = np.random.randint(10, 70, 60)
-scatter_x = np.arange(len(scatter_value))
+n = 720
 hist_card = right_column.get_subpanel_by_id("hist-pane").children
+hist_speed = db.n_latest_readings("vehicle-speed", n)
+hist_utc = db.n_latest_readings("time", n)[0]
+stations = ["station {}".format(i + 1) for i in range(len(db.keys))]
+hist_speed_dict = {s: l for s, l in zip(stations, hist_speed)}
+hist_speed_dict["utc"] = hist_utc
+hist_speed_df = pd.DataFrame.from_dict(hist_speed_dict)
 
-hist_graph = CustomScatter(plot_config, "historical data", hist_card)
-hist_graph.set_data(scatter_value, "kmh")
+# hist_speed_df=pd.DataFrame.from_dict(hist_speed_dict)
+# print(hist_speed_df)
+# scatter_value = np.random.randint(10, 70, 60)
+# scatter_x = np.arange(len(scatter_value))
+#
+# hist_graph = CustomScatter(plot_config, "historical data", hist_card)
+# hist_graph.set_data(scatter_value, "kmh")
+
+unit="kmh"
+y = hist_speed_df["station 1"].values
+x = np.arange(len(y)).tolist()
+t = [""]*len(x)
+
+max_val=np.max(y)
+max_idx=np.argmax(y)
+t[max_idx]=str(max_val.item())+" "+unit
+
+min_val=np.min(y)
+min_idx=np.argmin(y)
+t[min_idx]=str(min_val.item())+" "+unit
+
+graph = dcc.Graph(className="graphs",id="hist-plot")
+
+fig = px.scatter(x=x, y=y, text=t)
+fig.update_layout(margin=plot_config["margin"],
+                  paper_bgcolor=plot_config['bgcolor'],
+                  plot_bgcolor=plot_config['bgcolor'],
+                  showlegend=False,
+                  xaxis=dict(tickvals=x,
+                             ticktext=["" for i in range(len(x))],
+                             title="",
+                             color=plot_config['textcolor'],
+                             showgrid=False,
+                             zeroline=False,
+                             ),
+                  yaxis=dict(showgrid=False,
+                             title="",
+                             visible=False)
+                  )
+
+fig.update_traces(textfont_color=plot_config["textcolor"],
+                  mode="lines+markers+text",
+                  line=dict(color=plot_config["barcolor"]),
+                  marker=dict(color=plot_config["capcolor"]),
+                  textposition='top center'
+                  )
+
+
+slider=dcc.RangeSlider(
+    id="time-slider",
+    min=x[0],
+    max=x[-1],
+    value=[600,700],
+    marks={i:str(i) for i in x[0::50]},
+    step=10,
+    pushable=50,
+)
+
+
+graph.figure = fig
+hist_card.children = [slider,graph]
 
 app.layout = layout
 
+# @app.callback(Output("hist-plot","figure"),
+#               Input("time-slider","value"))
+# def update_hist_graph(value_range):
+#     val=hist_speed_df["station 1"].values.tolist()
+#     val=val[value_range[0]:value_range[1]]
+#     fig.update_traces(x=np.arange(len(val)),y=val)
+#     return fig
 
-@app.callback(Output("pie-graph","figure"),
-              Input("countdown-timer-id","n_intervals"))
 
+@app.callback(Output("pie-graph", "figure"),
+              Input("countdown-timer-id", "n_intervals"))
 def update_countdown(n):
-    time_elapsed=n%60
-    time_remaining=60-time_elapsed
-
-    fig = px.pie(names=["done","todo"],
-                 values=[time_elapsed, time_remaining],
-                 color_discrete_sequence=[plot_config["capcolor"], plot_config["barcolor"]],
-                 )
-    fig.update_traces(textinfo="none",
-                      hole=0.9,
-                      sort=False)
-
-    fig.update_layout(margin={"l": 8, "r": 8, "t": 16, "b": 16},
-                      paper_bgcolor=plot_config['bgcolor'],
-                      plot_bgcolor=plot_config['bgcolor'],
-                      showlegend=False,
-                      annotations=[dict(text=str(time_remaining), font_color="white", font_size=16, x=0.5, y=0.5, showarrow=False)]
-                      )
-
-    return fig
+    time_elapsed = n % 60
+    time_remaining = 60 - time_elapsed
+    spinner.increment(time_elapsed, time_remaining)
+    return spinner.fig
 
 
 @app.callback(

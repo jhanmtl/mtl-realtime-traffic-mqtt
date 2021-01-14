@@ -137,30 +137,51 @@ class CustomBar:
 
         self.graph.figure = self.fig
 
-# class CountdownDonut:
-#     def __init__(self,config,card_title,update_freq=1000):
 
+class CountdownSpinner:
+    def __init__(self, config, card_title, target_card, graph_id, update_freq=1000):
+        self.config = config
+        self.card = target_card
+        self.cardheader = dbc.CardHeader(card_title, style={"textAlign": "center",
+                                                            "padding": "0px",
+                                                            "border": "0px",
+                                                            "color": self.config['textcolor'],
+                                                            "borderRadius": "0px"
+                                                            })
+        self.fig = px.pie(values=[30, 30],
+                          color_discrete_sequence=[self.config["capcolor"], self.config["barcolor"]]
+                          )
 
+        self.fig.update_traces(textinfo="none",
+                               hole=0.95,
+                               sort=False,
+                               hoverinfo="skip",
+                               hovertemplate=None
+                               )
 
-class CountdownTimer:
-    def __init__(self, config, card_title, update_freq=1000):
-        header = dbc.CardHeader(card_title, style={"textAlign": "center"})
+        self.fig.update_layout(margin=self.config["margin"],
+                               paper_bgcolor=self.config['bgcolor'],
+                               plot_bgcolor=self.config['bgcolor'],
+                               showlegend=False,
+                               annotations=[dict(text="",
+                                                 font_color=self.config["textcolor"],
+                                                 font_size=16, x=0.5, y=0.5,
+                                                 showarrow=False)]
+                               )
 
-        pbar = dbc.Row(dbc.Col(dbc.Progress(id="countdown-progress",
-                                            barClassName="pbar",
-                                            style={"background": config['barcolor'],
-                                                   "margin": "auto"})),
-                       style={"height": "50%",
-                              "width": "85%",
-                              "textAlign": "center",
-                              "margin": "auto"})
+        self.graph = dcc.Graph(className="graphs", id=graph_id)
+        self.graph.figure = self.fig
+        self.interval = dcc.Interval(id="countdown-timer-id", interval=update_freq, n_intervals=0)
+        self.card.children = [self.cardheader, self.graph, self.interval]
 
-        ptext = dbc.Row(dbc.Col(html.P(id="countdown-text")),
-                        style={"width": "75%", "textAlign": "center", "margin": "auto"})
-
-        interval=dcc.Interval(id="countdown-timer-id", interval=update_freq, n_intervals=0)
-
-        self.layout=[header,pbar,ptext,interval]
+    def increment(self, time_elapsed, time_remaining):
+        self.fig.update_traces(
+            values=[time_elapsed, time_remaining]
+        )
+        self.fig.update_layout(annotations=[dict(text=str(time_remaining),
+                                                 font_color=self.config["textcolor"],
+                                                 font_size=16, x=0.5, y=0.5, showarrow=False)]
+                               )
 
 
 def init_layout():
@@ -223,7 +244,7 @@ class RightColumn:
                         ], className="stat-col"),
                     ], className="key-stat-row"),
 
-                    drop.get_layout()
+                    # drop.get_layout()
                 ], className="title-key-stat-col"),
                 mapp.get_layout(),
             ], className="title-stat-map-row"),
