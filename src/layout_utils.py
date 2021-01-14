@@ -79,12 +79,11 @@ class CustomScatter:
                                showlegend=False,
                                )
 
-
         self.graph.figure = self.fig
 
 
 class CustomBar:
-    def __init__(self, config, card_title, target_card, graph_id,update_freq=60000):
+    def __init__(self, config, card_title, target_card, graph_id, update_freq=60000):
         self.config = config
         self.card = target_card
         self.cardheader = dbc.CardHeader(card_title, style={"textAlign": "center",
@@ -93,13 +92,13 @@ class CustomBar:
                                                             "color": self.config['textcolor'],
                                                             "borderRadius": "0px"
                                                             })
-        self.graph = dcc.Graph(className="graphs",id=graph_id)
-        self.interval=dcc.Interval(
-            id=graph_id+"-interval",
+        self.graph = dcc.Graph(className="graphs", id=graph_id)
+        self.interval = dcc.Interval(
+            id=graph_id + "-interval",
             interval=update_freq,
             n_intervals=0
         )
-        self.card.children = [self.cardheader, self.graph,self.interval]
+        self.card.children = [self.cardheader, self.graph, self.interval]
         self.fig = None
 
     def set_data(self, values, names, unit):
@@ -138,59 +137,30 @@ class CustomBar:
 
         self.graph.figure = self.fig
 
-# class CountdownTimer:
-#     def __init__(self, config,card_title, target_card,update_freq=1000):
-#         self.config = config
-#         self.card = target_card
-#         self.cardheader = dbc.CardHeader(card_title, style={"textAlign": "center",
-#                                                             "padding": "0px",
-#                                                             "border": "0px",
-#                                                             "color": self.config['textcolor'],
-#                                                             "borderRadius": "0px"
-#                                                             })
-#         self.cardbody=dbc.CardBody()
-#         self.interval=dcc.Interval(
-#             id="countdown-timer-id",
-#             interval=update_freq,
-#             n_intervals=0
-#         )
-#         self.card.children = [self.cardheader,self.interval]
-#
-#     def set_data(self, values, names, unit):
-#         x = np.arange(len(values))
-#         cap = np.ones(len(values)) * self.config['capsize']
-#         ticktext = [str(i) + " " + unit for i in values]
-#         self.fig = px.bar(x=x, y=values)
-#         self.fig.update_traces(marker_color=self.config['barcolor'],
-#                                marker_line_color=self.config['barcolor'],
-#                                text=ticktext,
-#                                textposition="inside",
-#                                textfont_color=self.config["textcolor"],
-#                                )
-#
-#         capfig = go.Bar(
-#             x=x,
-#             y=cap,
-#             marker_color=self.config['capcolor'],
-#             marker_line_color=self.config['capcolor']
-#         )
-#
-#         self.fig.add_trace(capfig)
-#
-#         self.fig.update_layout(margin=self.config["margin"],
-#                                xaxis=dict(tickvals=x,
-#                                           ticktext=names,
-#                                           title=None,
-#                                           color=self.config['textcolor']),
-#                                yaxis=dict(visible=False),
-#                                paper_bgcolor=self.config['bgcolor'],
-#                                plot_bgcolor=self.config['bgcolor'],
-#                                barmode="relative",
-#                                showlegend=False,
-#                                bargap=0.02
-#                                )
-#
-#         self.graph.figure = self.fig
+# class CountdownDonut:
+#     def __init__(self,config,card_title,update_freq=1000):
+
+
+
+class CountdownTimer:
+    def __init__(self, config, card_title, update_freq=1000):
+        header = dbc.CardHeader(card_title, style={"textAlign": "center"})
+
+        pbar = dbc.Row(dbc.Col(dbc.Progress(id="countdown-progress",
+                                            barClassName="pbar",
+                                            style={"background": config['barcolor'],
+                                                   "margin": "auto"})),
+                       style={"height": "50%",
+                              "width": "85%",
+                              "textAlign": "center",
+                              "margin": "auto"})
+
+        ptext = dbc.Row(dbc.Col(html.P(id="countdown-text")),
+                        style={"width": "75%", "textAlign": "center", "margin": "auto"})
+
+        interval=dcc.Interval(id="countdown-timer-id", interval=update_freq, n_intervals=0)
+
+        self.layout=[header,pbar,ptext,interval]
 
 
 def init_layout():

@@ -4,19 +4,20 @@ import dash_html_components as html
 import dash_core_components as dcc
 import layout_utils
 from dash.dependencies import Input, Output
+import plotly.express as px
 
 import frontend_utils
 import pandas as pd
 import numpy as np
 import json
-from layout_utils import CustomBar, CustomTable, CustomScatter
+from layout_utils import CustomBar, CustomTable, CustomScatter, CountdownTimer
 
 with open("./assets/bar_config.json", "r") as jfile:
     plot_config = json.load(jfile)
 
 df = pd.read_csv("../data/detectors-active.csv")
 
-app = dash.Dash(__name__,external_stylesheets=[dbc.themes.DARKLY])
+app = dash.Dash(__name__, external_stylesheets=[dbc.themes.DARKLY])
 layout, left_column, right_column = layout_utils.init_layout()
 
 map_fig, map_data = frontend_utils.init_map(df)
@@ -44,18 +45,34 @@ summary = summary[["station", "corner", "speed (kmh)", "count (cars)", "gap time
 speed_card = left_column.get_subpanel_by_id("vspeed").children
 count_card = left_column.get_subpanel_by_id("vcount").children
 gap_card = left_column.get_subpanel_by_id("vgap").children
-refresh_card=right_column.get_subpanel_by_id("stat-3").children
 
-header=dbc.CardHeader("seconds to refresh",style={"textAlign":"center"})
+refresh_card = right_column.get_subpanel_by_id("stat-3").children
 
-pstyle={
-    "color":"red"
-}
+# ------------------------------ to be refactored into a spinner class -------------------------------------------------
+header=dbc.CardHeader("seconds to update",style={"padding":"0","textAlign":"center"})
 
-refresh_card.children=[header,
-                       dbc.Row(dbc.Col(dbc.Progress(id="countdown-progress",barClassName="pbar",style={"background":plot_config['barcolor'],"margin":"auto"})),style={"height":"50%","width":"85%","textAlign":"center","margin":"auto"}),
-                       dbc.Row(dbc.Col(html.P(id="countdown-text")),style={"width":"75%","textAlign":"center","margin":"auto"}),
-                       dcc.Interval(id="countdown-timer-id",interval=1000,n_intervals=0)]
+fig = px.pie(names=["done","todo"],
+                 values=[60, 0],
+                 color_discrete_sequence=[plot_config["capcolor"], plot_config["barcolor"]],
+                 )
+fig.update_traces(textinfo="none",
+                  hole=0.9,
+                  sort=False)
+
+fig.update_layout(margin={"l": 8, "r": 8, "t": 16, "b": 16},
+                  paper_bgcolor=plot_config['bgcolor'],
+                  plot_bgcolor=plot_config['bgcolor'],
+                  showlegend=False,
+                  annotations=[dict(text="", font_color="white", font_size=16, x=0.5, y=0.5, showarrow=False)]
+                  )
+
+graph = dcc.Graph(id="pie-graph", className="graphs")
+graph.figure = fig
+
+interval=dcc.Interval(id="countdown-timer-id",interval=1000,n_intervals=0)
+# ------------------------------ to be refactored into a spinner class -------------------------------------------------
+
+refresh_card.children = [header,graph,interval]
 
 speedbar = CustomBar(plot_config, "speed dectected", speed_card, "speed-live-graph")
 countbar = CustomBar(plot_config, "vehicles counted", count_card, "count-live-graph")
@@ -78,14 +95,30 @@ hist_graph.set_data(scatter_value, "kmh")
 
 app.layout = layout
 
-@app.callback([Output("countdown-progress","value"),
-               Output("countdown-text","children")],
-              Input("countdown-timer-id","n_intervals"))
-def update_countdown(n):
-    time_remaining=60-n%60
 
-    progress=int(100-100*(60-n%60)/60)
-    return progress, str(time_remaining)+" s"
+@app.callback(Output("pie-graph","figure"),
+              Input("countdown-timer-id","n_intervals"))
+
+def update_countdown(n):
+    time_elapsed=n%60
+    time_remaining=60-time_elapsed
+
+    fig = px.pie(names=["done","todo"],
+                 values=[time_elapsed, time_remaining],
+                 color_discrete_sequence=[plot_config["capcolor"], plot_config["barcolor"]],
+                 )
+    fig.update_traces(textinfo="none",
+                      hole=0.9,
+                      sort=False)
+
+    fig.update_layout(margin={"l": 8, "r": 8, "t": 16, "b": 16},
+                      paper_bgcolor=plot_config['bgcolor'],
+                      plot_bgcolor=plot_config['bgcolor'],
+                      showlegend=False,
+                      annotations=[dict(text=str(time_remaining), font_color="white", font_size=16, x=0.5, y=0.5, showarrow=False)]
+                      )
+
+    return fig
 
 
 @app.callback(
@@ -106,7 +139,6 @@ def update_live(n1, n2, n3):
     countbar.set_data(count_values, stations, "cars")
     gapbar.set_data(gap_values, stations, "s")
 
-    print(n1, n2, n3)
     return speedbar.fig, countbar.fig, gapbar.fig
 
 
