@@ -9,5 +9,7 @@
     "r": 8,
     "t": 16,
     "b": 16
-  }
+  },
+  "comp-color-dark": "#916C07",
+  "comp-color-bright":"#DEA916"
 }

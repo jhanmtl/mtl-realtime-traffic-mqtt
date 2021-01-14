@@ -36,50 +36,117 @@ class CustomTable:
 
 
 class CustomScatter:
-    def __init__(self, config, card_title, target_card):
+    def __init__(self, config, card_title, target_card, default_range=60):
         self.config = config
         self.card = target_card
+        self.default_range = default_range
         self.cardheader = dbc.CardHeader(card_title, style={"textAlign": "center",
                                                             "padding": "0px",
                                                             "border": "0px",
                                                             "color": self.config['textcolor'],
                                                             "borderRadius": "0px"
                                                             })
-        self.graph = dcc.Graph(className="graphs")
-        self.card.children = [self.cardheader, self.graph]
+        self.graph = dcc.Graph(className="graphs", id="hist-plot")
+        self.slider = None
         self.fig = None
 
-    def set_data(self, values, unit):
-        x = np.arange(len(values))
-        ticktext = [str(i) for i in values]
-        self.fig = px.scatter(x=x, y=values)
-        self.fig.update_traces(marker_color=self.config['capcolor'],
-                               marker_line_color=self.config['capcolor'],
-                               text=ticktext,
-                               # textposition="inside",
-                               textfont_color=self.config["textcolor"],
-                               mode="lines+markers",
-                               line=dict(color=self.config["barcolor"]),
-                               marker=dict(color=self.config["capcolor"])
-                               )
+        self.val_primary = None
+        self.val_secondary = None
 
+        self.ticks = None
+        self.unit = None
+        self.time=None
+
+    def set_primary(self, time,values, unit):
+        self.time=time
+        self.unit = unit
+        self.ticks = np.arange(len(values))
+        self.val_primary = values
+        self.slider = dcc.RangeSlider(id="time-slider",
+                                      min=self.ticks[0],
+                                      max=self.ticks[-1]+1,
+                                      value=[self.ticks[-1] - self.default_range, self.ticks[-1]+1],
+                                      # marks={i: self.time[i] for i in self.ticks.tolist()[0::50]},
+                                      step=10,
+                                      pushable=self.default_range,
+                                      )
+
+    def set_seconary(self, values):
+        self.val_secondary = values
+
+    def update_primary(self, values):
+        x = np.arange(len(values))
+        t = self._min_max_texts(values)
+        self.fig = px.scatter(x=x,
+                              y=values,
+                              # text=t
+                              )
         self.fig.update_layout(margin=self.config["margin"],
+                               paper_bgcolor=self.config['bgcolor'],
+                               plot_bgcolor=self.config['bgcolor'],
+                               showlegend=False,
                                xaxis=dict(tickvals=x,
                                           ticktext=["" for i in range(len(x))],
-                                          title="time stamp",
+                                          title="",
                                           color=self.config['textcolor'],
                                           showgrid=False,
                                           zeroline=False,
                                           ),
                                yaxis=dict(showgrid=False,
-                                          title=unit,
-                                          visible=False),
-                               paper_bgcolor=self.config['bgcolor'],
-                               plot_bgcolor=self.config['bgcolor'],
-                               showlegend=False,
+                                          title="",
+                                          visible=False)
+                               )
+        self.fig.update_traces(textfont_color=self.config["textcolor"],
+                               mode="lines+markers+text",
+                               line=dict(color=self.config["barcolor"]),
+                               marker=dict(color=self.config["capcolor"]),
+                               textposition='top center'
                                )
 
         self.graph.figure = self.fig
+
+        self.card.children = [self.cardheader,
+                              self.graph,
+                              html.Div(self.slider, style={"width": "90%", "margin": "auto", "paddingTop": "32px"})
+                              ]
+
+    def update_secondary(self, values):
+        t = self._min_max_texts(values)
+        existing_traces = list(self.fig.data)
+        if len(existing_traces) > 1:
+            existing_traces.pop(1)
+
+        self.fig.data = existing_traces
+
+        x = np.arange(len(values))
+        secondary_fig = go.Scatter(x=x,
+                                   y=values,
+                                   mode="lines+markers+text",
+                                   line=dict(color=self.config['comp-color-dark']),
+                                   marker=dict(color=self.config['comp-color-bright']),
+                                   textposition='top center',
+                                   textfont_color=self.config["textcolor"],
+                                   # text=t
+                                   )
+
+        self.fig.add_trace(secondary_fig)
+
+    def _min_max_texts(self, values):
+        x = np.arange(len(values))
+        t = [""] * len(x)
+
+        max_val = np.max(values)
+        max_idx = np.argmax(values)
+        t[max_idx] = str(max_val.item()) + " " + self.unit
+
+        min_val = np.min(values)
+        min_idx = np.argmin(values)
+        t[min_idx] = str(min_val.item()) + " " + self.unit
+
+        return t
+
+    def clear_all(self):
+        self.fig.data = ()
 
 
 class CustomBar:

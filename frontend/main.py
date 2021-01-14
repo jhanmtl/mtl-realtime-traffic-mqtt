@@ -63,86 +63,46 @@ aux_card = left_column.get_subpanel_by_id("aux").children
 table = CustomTable(plot_config, "detector metrics summary", aux_card)
 table.set_data(summary)
 
-n = 720
+n = 1440
+
 hist_card = right_column.get_subpanel_by_id("hist-pane").children
+
 hist_speed = db.n_latest_readings("vehicle-speed", n)
 hist_utc = db.n_latest_readings("time", n)[0]
 stations = ["station {}".format(i + 1) for i in range(len(db.keys))]
 hist_speed_dict = {s: l for s, l in zip(stations, hist_speed)}
-hist_speed_dict["utc"] = hist_utc
-hist_speed_df = pd.DataFrame.from_dict(hist_speed_dict)
 
-# hist_speed_df=pd.DataFrame.from_dict(hist_speed_dict)
-# print(hist_speed_df)
-# scatter_value = np.random.randint(10, 70, 60)
-# scatter_x = np.arange(len(scatter_value))
-#
-# hist_graph = CustomScatter(plot_config, "historical data", hist_card)
-# hist_graph.set_data(scatter_value, "kmh")
+hplot = CustomScatter(plot_config, "historic data", hist_card)
+values1 = hist_speed_dict["station 1"]
+values2 = hist_speed_dict["station 2"]
+values3 = hist_speed_dict["station 3"]
 
-unit="kmh"
-y = hist_speed_df["station 1"].values
-x = np.arange(len(y)).tolist()
-t = [""]*len(x)
+hplot.set_primary(hist_utc,values1,"kmh")
+hplot.set_seconary(values2)
 
-max_val=np.max(y)
-max_idx=np.argmax(y)
-t[max_idx]=str(max_val.item())+" "+unit
-
-min_val=np.min(y)
-min_idx=np.argmin(y)
-t[min_idx]=str(min_val.item())+" "+unit
-
-graph = dcc.Graph(className="graphs",id="hist-plot")
-
-fig = px.scatter(x=x, y=y, text=t)
-fig.update_layout(margin=plot_config["margin"],
-                  paper_bgcolor=plot_config['bgcolor'],
-                  plot_bgcolor=plot_config['bgcolor'],
-                  showlegend=False,
-                  xaxis=dict(tickvals=x,
-                             ticktext=["" for i in range(len(x))],
-                             title="",
-                             color=plot_config['textcolor'],
-                             showgrid=False,
-                             zeroline=False,
-                             ),
-                  yaxis=dict(showgrid=False,
-                             title="",
-                             visible=False)
-                  )
-
-fig.update_traces(textfont_color=plot_config["textcolor"],
-                  mode="lines+markers+text",
-                  line=dict(color=plot_config["barcolor"]),
-                  marker=dict(color=plot_config["capcolor"]),
-                  textposition='top center'
-                  )
+hplot.update_primary(values1)
+hplot.update_secondary(values2)
 
 
-slider=dcc.RangeSlider(
-    id="time-slider",
-    min=x[0],
-    max=x[-1],
-    value=[600,700],
-    marks={i:str(i) for i in x[0::50]},
-    step=10,
-    pushable=50,
-)
-
-
-graph.figure = fig
-hist_card.children = [slider,graph]
 
 app.layout = layout
 
-# @app.callback(Output("hist-plot","figure"),
-#               Input("time-slider","value"))
-# def update_hist_graph(value_range):
-#     val=hist_speed_df["station 1"].values.tolist()
-#     val=val[value_range[0]:value_range[1]]
-#     fig.update_traces(x=np.arange(len(val)),y=val)
-#     return fig
+
+@app.callback(Output("hist-plot","figure"),
+              Input("time-slider","value"))
+def update_hist_graph(value_range):
+
+    i=value_range[0]
+    j=value_range[1]
+
+    windowed_primary=hplot.val_primary[i:j]
+    windowed_secondary=hplot.val_secondary[i:j]
+
+    # hplot.clear_all()
+    hplot.update_primary(windowed_primary)
+    hplot.update_secondary(windowed_secondary)
+
+    return hplot.fig
 
 
 @app.callback(Output("pie-graph", "figure"),
