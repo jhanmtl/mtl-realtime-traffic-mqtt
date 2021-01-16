@@ -96,3 +96,66 @@ html,body{
     background: #00a99d;
 }
 
+#drop-1 .Select-control{
+    background-color: #303030 !important;
+    border: 0px !important;
+    width: 50%;
+    height: 25%;
+}
+
+#drop-1 .Select-value-label{
+    color: #00a99d !important;;
+}
+
+#drop-1 .Select-menu-outer {
+    background-color: #303030;
+    width: 50%;
+    color: #00a99d;
+    border: 0px !important;
+    text-align: center;
+    overflow-y: hidden !important;
+}
+
+#drop-2 .Select-control{
+    background-color: #303030 !important;
+    border: 0px !important;
+    width: 50%;
+}
+
+#drop-2 .Select-value-label{
+    color: #DEA916 !important;;
+}
+
+#drop-2 .Select-menu-outer {
+    background-color: #303030;
+    width: 50%;
+    color: #DEA916;
+}
+
+.rc-slider-handle{
+    border: solid 2px #333;
+    background-color: white;
+    height: 14px;
+    width: 14px;
+}
+
+.rc-slider-track {
+    background-color: lightgray;
+}
+
+.rc-slider-rail{
+    background-color: #474747;
+}
+
+/*.Select-value{*/
+/*    !*background-color:#303030;*!*/
+/*    !*color:white !important;*!*/
+/*    border: 1px solid red;*/
+/*    width: 50%;*/
+/*}*/
+
+/*.control-panel-dropdown{*/
+/*    border:1px solid blue;*/
+/*    width: 50%;*/
+/*}*/
+

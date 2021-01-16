@@ -72,13 +72,15 @@ hist_utc = db.n_latest_readings("time", n)[0]
 stations = ["station {}".format(i + 1) for i in range(len(db.keys))]
 hist_speed_dict = {s: l for s, l in zip(stations, hist_speed)}
 
-hplot = CustomScatter(plot_config, "historic data", hist_card)
+hplot = CustomScatter(plot_config, "historic data over last 24 hrs - use slider to adjust range", hist_card,stations)
+
 values1 = hist_speed_dict["station 1"]
 values2 = hist_speed_dict["station 2"]
-values3 = hist_speed_dict["station 3"]
 
-hplot.set_primary(hist_utc,values1,"kmh")
+hplot.set_primary(hist_utc, values1, "kmh")
 hplot.set_seconary(values2)
+
+
 
 hplot.update_primary(values1)
 hplot.update_secondary(values2)
@@ -86,23 +88,6 @@ hplot.update_secondary(values2)
 
 
 app.layout = layout
-
-
-@app.callback(Output("hist-plot","figure"),
-              Input("time-slider","value"))
-def update_hist_graph(value_range):
-
-    i=value_range[0]
-    j=value_range[1]
-
-    windowed_primary=hplot.val_primary[i:j]
-    windowed_secondary=hplot.val_secondary[i:j]
-
-    # hplot.clear_all()
-    hplot.update_primary(windowed_primary)
-    hplot.update_secondary(windowed_secondary)
-
-    return hplot.fig
 
 
 @app.callback(Output("pie-graph", "figure"),
@@ -117,23 +102,54 @@ def update_countdown(n):
 @app.callback(
     [Output('speed-live-graph', "figure"),
      Output('count-live-graph', "figure"),
-     Output("gap-live-graph", "figure")
+     Output("gap-live-graph", "figure"),
+     Output("hist-plot", "figure")
      ],
     [Input('speed-live-graph-interval', 'n_intervals'),
      Input('count-live-graph-interval', 'n_intervals'),
-     Input('gap-live-graph-interval', 'n_intervals')]
+     Input('gap-live-graph-interval', 'n_intervals'),
+     Input('hist-interval', 'n_intervals'),
+     Input('hist-slider', 'value'),
+     Input("drop-1","value"),
+     Input("drop-2","value")
+     ]
 )
-def update_live(n1, n2, n3):
-    speed_values = db.latest_readings("vehicle-speed")
-    count_values = db.latest_readings("vehicle-count")
-    gap_values = db.latest_readings("vehicle-gap-time")
+def update_live(n1, n2, n3, n4, value_range,selection_1,selection_2):
+    hist_speed = db.n_latest_readings("vehicle-speed", n)
+    hist_speed_dict = {s: l for s, l in zip(stations, hist_speed)}
+    values1 = hist_speed_dict[selection_1]
+    values2 = hist_speed_dict[selection_2]
+    [i, j] = value_range
 
-    speedbar.set_data(speed_values, stations, "kmh")
-    countbar.set_data(count_values, stations, "cars")
-    gapbar.set_data(gap_values, stations, "s")
+    ctx = dash.callback_context
 
-    return speedbar.fig, countbar.fig, gapbar.fig
+    update_all = False
+
+
+    if ctx.triggered:
+        if len(ctx.triggered) > 1:
+            update_all = True
+
+    if update_all:
+        speed_values = db.latest_readings("vehicle-speed")
+        count_values = db.latest_readings("vehicle-count")
+        gap_values = db.latest_readings("vehicle-gap-time")
+
+        speedbar.set_data(speed_values, stations, "kmh")
+        countbar.set_data(count_values, stations, "cars")
+        gapbar.set_data(gap_values, stations, "s")
+
+    hplot.set_primary(hist_utc, values1, "kmh")
+    hplot.set_seconary(values2)
+
+    windowed_primary = hplot.val_primary[i:j]
+    windowed_secondary = hplot.val_secondary[i:j]
+
+    hplot.update_primary(windowed_primary)
+    hplot.update_secondary(windowed_secondary)
+
+    return speedbar.fig, countbar.fig, gapbar.fig, hplot.fig
 
 
 if __name__ == "__main__":
-    app.run_server(debug=True, port=8080)
+    app.run_server(debug=False, port=8080)

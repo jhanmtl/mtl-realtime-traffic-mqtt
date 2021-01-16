@@ -36,7 +36,7 @@ class CustomTable:
 
 
 class CustomScatter:
-    def __init__(self, config, card_title, target_card, default_range=60):
+    def __init__(self, config, card_title, target_card, stations, default_range=60, freq=60600):
         self.config = config
         self.card = target_card
         self.default_range = default_range
@@ -57,19 +57,53 @@ class CustomScatter:
         self.unit = None
         self.time=None
 
+        self.interval= dcc.Interval(
+            id="hist-interval",
+            interval=freq,
+            n_intervals=0
+        )
+
+        self.dropdown1 = dcc.Dropdown(
+            id='drop-1',
+            value="station 1",
+            options=[{"label": s, 'value': s} for s in stations],
+            clearable=False,
+        )
+
+        self.dropdown2 = dcc.Dropdown(
+            id='drop-2',
+            value="station 2",
+            options=[{"label": s, 'value': s} for s in stations],
+            clearable=False,
+        )
+
+        self.data_select = dbc.Row([
+            dbc.Col(self.dropdown1, width={"size": 3, "offset": 4}),
+            dbc.Col(self.dropdown2, width={"size": 3})
+        ],
+            style={"marginTop": 32, "textAlign": "center"}
+        )
+
+
     def set_primary(self, time,values, unit):
         self.time=time
         self.unit = unit
         self.ticks = np.arange(len(values))
         self.val_primary = values
-        self.slider = dcc.RangeSlider(id="time-slider",
+        self.slider = dcc.RangeSlider(id="hist-slider",
                                       min=self.ticks[0],
                                       max=self.ticks[-1]+1,
                                       value=[self.ticks[-1] - self.default_range, self.ticks[-1]+1],
-                                      # marks={i: self.time[i] for i in self.ticks.tolist()[0::50]},
                                       step=10,
                                       pushable=self.default_range,
                                       )
+
+        self.card.children = [self.cardheader,
+                              self.data_select,
+                              self.graph,
+                              html.Div(self.slider, style={"width": "90%", "margin": "auto", "paddingTop": "32px"}),
+                              self.interval
+                              ]
 
     def set_seconary(self, values):
         self.val_secondary = values
@@ -78,8 +112,7 @@ class CustomScatter:
         x = np.arange(len(values))
         t = self._min_max_texts(values)
         self.fig = px.scatter(x=x,
-                              y=values,
-                              # text=t
+                              y=values
                               )
         self.fig.update_layout(margin=self.config["margin"],
                                paper_bgcolor=self.config['bgcolor'],
@@ -105,11 +138,6 @@ class CustomScatter:
 
         self.graph.figure = self.fig
 
-        self.card.children = [self.cardheader,
-                              self.graph,
-                              html.Div(self.slider, style={"width": "90%", "margin": "auto", "paddingTop": "32px"})
-                              ]
-
     def update_secondary(self, values):
         t = self._min_max_texts(values)
         existing_traces = list(self.fig.data)
@@ -126,7 +154,6 @@ class CustomScatter:
                                    marker=dict(color=self.config['comp-color-bright']),
                                    textposition='top center',
                                    textfont_color=self.config["textcolor"],
-                                   # text=t
                                    )
 
         self.fig.add_trace(secondary_fig)
@@ -150,7 +177,7 @@ class CustomScatter:
 
 
 class CustomBar:
-    def __init__(self, config, card_title, target_card, graph_id, update_freq=60000):
+    def __init__(self, config, card_title, target_card, graph_id, update_freq=60600):
         self.config = config
         self.card = target_card
         self.cardheader = dbc.CardHeader(card_title, style={"textAlign": "center",
@@ -170,7 +197,7 @@ class CustomBar:
 
     def set_data(self, values, names, unit):
         x = np.arange(len(values))
-        cap = np.ones(len(values)) * self.config['capsize']
+        cap = np.ones(len(values)) * self.config['capsize']*np.max(values)
         ticktext = [str(i) + " " + unit for i in values]
         self.fig = px.bar(x=x, y=values)
         self.fig.update_traces(marker_color=self.config['barcolor'],
@@ -206,7 +233,7 @@ class CustomBar:
 
 
 class CountdownSpinner:
-    def __init__(self, config, card_title, target_card, graph_id, update_freq=1000):
+    def __init__(self, config, card_title, target_card, graph_id, update_freq=1010):
         self.config = config
         self.card = target_card
         self.cardheader = dbc.CardHeader(card_title, style={"textAlign": "center",
