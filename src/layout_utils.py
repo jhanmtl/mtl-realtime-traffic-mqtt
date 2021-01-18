@@ -5,6 +5,7 @@ import plotly.express as px
 import dash_html_components as html
 import dash_core_components as dcc
 import dash_bootstrap_components as dbc
+import pandas as pd
 
 
 class CustomTable:
@@ -36,10 +37,11 @@ class CustomTable:
 
 
 class CustomScatter:
-    def __init__(self, config, card_title, target_card, stations, default_range=60, freq=60600):
+    def __init__(self, config, card_title, target_card, stations, default_range=120, min_gap=30, freq=60600):
         self.config = config
         self.card = target_card
         self.default_range = default_range
+        self.min_gap=min_gap
         self.cardheader = dbc.CardHeader(card_title, style={"textAlign": "center",
                                                             "padding": "0px",
                                                             "border": "0px",
@@ -56,6 +58,9 @@ class CustomScatter:
         self.ticks = None
         self.unit = None
         self.time=None
+
+        self.slider_val_1=None
+        self.slider_val_2=None
 
         self.interval= dcc.Interval(
             id="hist-interval",
@@ -95,13 +100,24 @@ class CustomScatter:
                                       max=self.ticks[-1]+1,
                                       value=[self.ticks[-1] - self.default_range, self.ticks[-1]+1],
                                       step=10,
-                                      pushable=self.default_range,
+                                      pushable=self.min_gap,
+                                      # updatemode="drag"
                                       )
+
+        self.slider_val_1=html.Div(children="val",id="left-marker")
+        self.slider_val_2=html.Div(children="val",id="right-marker")
+
+        slider_assembly= html.Div([
+            self.slider_val_1,
+            self.slider_val_2,
+            self.slider,
+
+        ], style={"position": "relative", "width": "90%","marginLeft":"5%","marginBottom":"32px"})
 
         self.card.children = [self.cardheader,
                               self.data_select,
                               self.graph,
-                              html.Div(self.slider, style={"width": "90%", "margin": "auto", "paddingTop": "32px"}),
+                              slider_assembly,
                               self.interval
                               ]
 
@@ -110,7 +126,6 @@ class CustomScatter:
 
     def update_primary(self, values):
         x = np.arange(len(values))
-        t = self._min_max_texts(values)
         self.fig = px.scatter(x=x,
                               y=values
                               )
@@ -127,13 +142,15 @@ class CustomScatter:
                                           ),
                                yaxis=dict(showgrid=False,
                                           title="",
-                                          visible=False)
+                                          visible=False),
                                )
         self.fig.update_traces(textfont_color=self.config["textcolor"],
                                mode="lines+markers+text",
                                line=dict(color=self.config["barcolor"]),
                                marker=dict(color=self.config["capcolor"]),
-                               textposition='top center'
+                               textposition='top center',
+                               customdata=self.time,
+                               hovertemplate='Time: %{customdata}<br>Reading: %{y} '+self.unit,
                                )
 
         self.graph.figure = self.fig
@@ -154,9 +171,13 @@ class CustomScatter:
                                    marker=dict(color=self.config['comp-color-bright']),
                                    textposition='top center',
                                    textfont_color=self.config["textcolor"],
+                                   customdata=self.time,
+                                   hovertemplate='Time: %{customdata}<br>Reading: %{y} ' + self.unit,
+                                   name=""
                                    )
 
-        self.fig.add_trace(secondary_fig)
+        self.fig.add_trace(secondary_fig,
+                           )
 
     def _min_max_texts(self, values):
         x = np.arange(len(values))

@@ -83,7 +83,7 @@ html,body{
 .card{
     width: 100%;
     margin: 4px;
-    overflow-y: hidden;
+    overflow: hidden;
     border-radius: 0;
 }
 
@@ -146,6 +146,20 @@ html,body{
 .rc-slider-rail{
     background-color: #474747;
 }
+
+#hist-slider{
+    padding-top: 48px !important;
+    padding-left: 0px !important;
+    padding-right: 0px !important;
+}
+
+.patch-slider-disp{
+    color: white;
+    display: inline-block;
+    border: 1px solid white;
+    position: absolute;
+}
+
 
 /*.Select-value{*/
 /*    !*background-color:#303030;*!*/

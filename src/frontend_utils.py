@@ -11,6 +11,28 @@ import pandas as pd
 import numpy as np
 import os
 import redis
+import pytz
+import datetime
+
+
+def date_convert(utc_time_str, target_tz="America/New_York"):
+    [date, time] = utc_time_str.split("T")
+
+    date = [int(i) for i in date.split("-")]
+    year = date[0]
+    month = date[1]
+    day = date[2]
+
+    time = [int(i) for i in time.split(":")]
+    hour = time[0]
+    minute = time[1]
+    second = time[2]
+
+    utc_time = datetime.datetime(year, month, day, hour, minute, second)
+    utc_time = utc_time.replace(tzinfo=pytz.utc)
+    converted = utc_time.astimezone(pytz.timezone(target_tz))
+
+    return converted.strftime("%m/%d"), converted.strftime("%H:%m")
 
 
 class RedisDB:
@@ -45,9 +67,9 @@ class RedisDB:
             complete_readings = self.readings[k][value_type]
             leng = len(complete_readings)
             if leng <= n:
-                subreadings=complete_readings
+                subreadings = complete_readings
             else:
-                subreadings=complete_readings[leng - n:leng]
+                subreadings = complete_readings[leng - n:leng]
 
             values.append(subreadings)
 

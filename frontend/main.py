@@ -16,6 +16,9 @@ from layout_utils import CustomBar, CustomTable, CustomScatter, CountdownSpinner
 with open("./assets/bar_config.json", "r") as jfile:
     plot_config = json.load(jfile)
 
+with open("./assets/slider_config.json", "r") as jfile:
+    slider_config = json.load(jfile)
+
 df = pd.read_csv("../data/detectors-active.csv")
 
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.DARKLY])
@@ -72,7 +75,7 @@ hist_utc = db.n_latest_readings("time", n)[0]
 stations = ["station {}".format(i + 1) for i in range(len(db.keys))]
 hist_speed_dict = {s: l for s, l in zip(stations, hist_speed)}
 
-hplot = CustomScatter(plot_config, "historic data over last 24 hrs - use slider to adjust range", hist_card,stations)
+hplot = CustomScatter(plot_config, "historic data over last 24 hrs - use slider to adjust range", hist_card, stations)
 
 values1 = hist_speed_dict["station 1"]
 values2 = hist_speed_dict["station 2"]
@@ -80,14 +83,51 @@ values2 = hist_speed_dict["station 2"]
 hplot.set_primary(hist_utc, values1, "kmh")
 hplot.set_seconary(values2)
 
-
-
 hplot.update_primary(values1)
 hplot.update_secondary(values2)
 
-
-
 app.layout = layout
+
+
+@app.callback([Output("left-marker", "style"),
+               Output("left-marker", "children"),
+               Output("right-marker", "style"),
+               Output("right-marker", "children")
+               ],
+              Input("hist-slider", "value"),
+              )
+def update_slider_labels(v):
+    global  hist_utc
+    [value_left, value_right] = v
+
+    marginLeft = int(100 * (value_left / n))
+    marginRight = int(100 * (value_right / n))
+
+    style_left = {"marginLeft": "{}%".format(marginLeft)}
+    style_left.update(slider_config)
+
+    style_right = {"marginLeft": "{}%".format(marginRight - 4), "paddingTop": "60px"}
+    style_right.update(slider_config)
+
+    time_left = hist_utc[value_left - 1]
+    time_right = hist_utc[value_right - 1]
+
+    leftday, lefttime = frontend_utils.date_convert(time_left)
+    rightday, righttime = frontend_utils.date_convert(time_right)
+
+    text_left = html.P([
+        leftday,
+        html.Br(),
+        lefttime
+    ])
+
+    text_right = html.P([
+        rightday,
+        html.Br(),
+        righttime
+    ])
+
+    return style_left, text_left, style_right, text_right
 
 
 @app.callback(Output("pie-graph", "figure"),
@@ -110,12 +150,18 @@ def update_countdown(n):
      Input('gap-live-graph-interval', 'n_intervals'),
      Input('hist-interval', 'n_intervals'),
      Input('hist-slider', 'value'),
-     Input("drop-1","value"),
-     Input("drop-2","value")
+     Input("drop-1", "value"),
+     Input("drop-2", "value")
      ]
 )
-def update_live(n1, n2, n3, n4, value_range,selection_1,selection_2):
+def update_live(n1, n2, n3, n4, value_range, selection_1, selection_2):
+    global hist_speed
+    global hist_utc
+
     hist_speed = db.n_latest_readings("vehicle-speed", n)
+    hist_utc = db.n_latest_readings("time", n)[0]
+    # print(hist_utc[-1])
+
     hist_speed_dict = {s: l for s, l in zip(stations, hist_speed)}
     values1 = hist_speed_dict[selection_1]
     values2 = hist_speed_dict[selection_2]
@@ -124,7 +170,6 @@ def update_live(n1, n2, n3, n4, value_range,selection_1,selection_2):
     ctx = dash.callback_context
 
     update_all = False
-
 
     if ctx.triggered:
         if len(ctx.triggered) > 1:
@@ -152,4 +197,4 @@ def update_live(n1, n2, n3, n4, value_range,selection_1,selection_2):
 
 
 if __name__ == "__main__":
-    app.run_server(debug=False, port=8080)
+    app.run_server(debug=True, port=8080, dev_tools_ui=False)
