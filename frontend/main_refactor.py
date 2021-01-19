@@ -11,8 +11,7 @@ import frontend_utils
 import pandas as pd
 import numpy as np
 import json
-from layout_utils import CustomBar, CustomTable, CustomScatter, CountdownSpinner
-
+from layout_utils import CustomBar, CustomTable, CustomScatter, CountdownSpinner, CustomSlider, CustomDropdown
 
 # ================= load configs ==============================================
 with open("./assets/bar_config.json", "r") as jfile:
@@ -21,7 +20,7 @@ with open("./assets/bar_config.json", "r") as jfile:
 with open("./assets/slider_config.json", "r") as jfile:
     slider_config = json.load(jfile)
 
-n = 20
+n = 400
 
 # ================= instantiate db, fetch data =================================
 db = frontend_utils.RedisDB()
@@ -42,7 +41,6 @@ gap_card = left_column.get_subpanel_by_id("vgap").children
 refresh_card = right_column.get_subpanel_by_id("stat-3").children
 hist_card = right_column.get_subpanel_by_id("hist-pane").children
 
-
 # ================== map stuff ================================================
 map_fig, map_data = frontend_utils.init_map(df)
 right_column.get_subpanel_by_id('map-pane').children.figure = map_fig
@@ -61,66 +59,42 @@ countbar.set_data(count_values, stations, "cars")
 gapbar.set_data(gap_values, stations, "s")
 
 # =================== hist scatter plot =====================================
-hist_speed = db.n_latest_readings("vehicle-speed", n)
+hist_data = db.n_latest_readings("vehicle-speed", n)
 hist_utc = db.n_latest_readings("time", n)[0]
-hist_dict = {s: l for s, l in zip(stations, hist_speed)}
-hplot = CustomScatter(plot_config, "historic data over last 24 hrs - use slider to adjust range", hist_card, stations)
+hist_dict = {s: l for s, l in zip(stations, hist_data)}
 
-values1 = hist_dict["station 1"]
-values2 = hist_dict["station 2"]
+primary_values = hist_dict["station 1"]
+secondary_values = hist_dict["station 2"]
 
-hplot.set_primary(hist_utc, values1, "kmh")
-hplot.set_seconary(values2)
+scatter = CustomScatter(plot_config)
+slider = CustomSlider()
+dropdown = CustomDropdown(stations)
 
-hplot.update_primary(hist_utc, values1)
-hplot.update_secondary(hist_utc, values2)
+cardheader = dbc.CardHeader("historic data over 24 hrs - use sliders and dropdown to select range and type",
+                            style={"textAlign": "center",
+                                   "padding": "0px",
+                                   "border": "0px",
+                                   "color": plot_config['textcolor'],
+                                   "borderRadius": "0px"
+                                   })
 
-app.layout = layout
+scatter.set_unit("kmh")
+scatter.set_labels(hist_utc)
 
+scatter.set_primary_data(primary_values)
+scatter.set_secondary_data(secondary_values)
 
-@app.callback([Output("left-marker", "style"),
-               Output("left-marker", "children"),
-               Output("right-marker", "style"),
-               Output("right-marker", "children")
-               ],
-              Input("hist-slider", "value"),
-              )
-def update_slider_labels(v):
-    global hist_utc
+slider.set_labels(hist_utc)
 
-    [value_left, value_right] = v
-    # print(v)
+hist_card.children = [cardheader, dropdown.layout, scatter.graph, slider.layout]
 
-    marginLeft = int(100 * (value_left / n))
-    marginRight = int(100 * (value_right / n))
+minterval = dcc.Interval(
+    id="minute-interval",
+    interval=60600,
+    n_intervals=0
+)
 
-    style_left = {"marginLeft": "{}%".format(marginLeft)}
-    style_left.update(slider_config)
-
-    style_right = {"marginLeft": "{}%".format(marginRight - 4), "paddingTop": "60px"}
-    style_right.update(slider_config)
-
-    time_left = hist_utc[value_left - 1]
-    time_right = hist_utc[value_right - 1]
-
-    # print(time_left, time_right)
-
-    leftday, lefttime = frontend_utils.date_convert(time_left)
-    rightday, righttime = frontend_utils.date_convert(time_right)
-
-    text_left = html.P([
-        leftday,
-        html.Br(),
-        lefttime
-    ])
-
-    text_right = html.P([
-        rightday,
-        html.Br(),
-        righttime
-    ])
-
-    return style_left, text_left, style_right, text_right
+app.layout = html.Div([layout, minterval])
 
 
 @app.callback(Output("pie-graph", "figure"),
@@ -132,61 +106,127 @@ def update_countdown(n):
     return spinner.fig
 
 
+def slide_zoom_in(slider_values):
+    [idx_left, idx_right] = slider_values
+
+    offset_left = int(100 * (idx_left / n))
+    offset_right = int(100 * (idx_right / n)) - 7
+
+    style_left = {"marginLeft": "{}%".format(offset_left), "marginTop": "10px"}
+    style_left.update(slider_config)
+
+    style_right = {"marginLeft": "{}%".format(offset_right), "marginTop": "75px"}
+    style_right.update(slider_config)
+
+    text_left = slider.labels[idx_left]
+    text_right = slider.labels[idx_right]
+
+    text_left=text_left.split("T")[-1]
+    text_right=text_right.split("T")[-1]
+
+    scatter.zoom_in(idx_left, idx_right)
+
+    return [scatter.base_fig, idx_left, idx_right, style_left, text_left, style_right,
+            text_right]
+
+
 @app.callback(
-    [Output('speed-live-graph', "figure"),
+    [Output("left-marker", "style"),
+     Output("left-marker", "children"),
+     Output("right-marker", "style"),
+     Output("right-marker", "children")],
+    [Input('cust-slider', 'value'),
+     Input('minute-interval', 'n_intervals')]
+)
+def update_slider(slider_values, n_intervals):
+    ctx = dash.callback_context
+    trigger = ctx.triggered[0]["prop_id"]
+    if "interval" in trigger:
+        new_hist_utc = db.n_latest_readings("time", n)[0]
+        slider.set_labels(new_hist_utc)
+
+    zoom_slide_updates = slide_zoom_in(slider_values)
+    return zoom_slide_updates[3:]
+
+
+@app.callback(
+    [Output("hist-plot", "figure"),
+     Output('speed-live-graph', "figure"),
      Output('count-live-graph', "figure"),
-     Output("gap-live-graph", "figure"),
-     Output("hist-plot", "figure")
+     Output("gap-live-graph", "figure")
      ],
-    [Input('speed-live-graph-interval', 'n_intervals'),
-     Input('count-live-graph-interval', 'n_intervals'),
-     Input('gap-live-graph-interval', 'n_intervals'),
-     Input('hist-interval', 'n_intervals'),
-     Input('hist-slider', 'value'),
+    [Input("cust-slider", "value"),
+     Input("minute-interval", "n_intervals"),
      Input("drop-1", "value"),
-     Input("drop-2", "value")
+     Input("drop-2", "value"),
+     Input("drop-0", "value")
      ]
 )
-def update_live(n1, n2, n3, n4, value_range, selection_1, selection_2):
-    global hist_speed
-    global hist_utc
-
-    hist_speed = db.n_latest_readings("vehicle-speed", n)
-    hist_utc = db.n_latest_readings("time", n)[0]
-
-    hist_speed_dict = {s: l for s, l in zip(stations, hist_speed)}
-    values1 = hist_speed_dict[selection_1]
-    values2 = hist_speed_dict[selection_2]
-    [i, j] = value_range
-
+def update_plots(slider_values, _, selection_1, selection_2, selection_0):
     ctx = dash.callback_context
+    trigger = ctx.triggered[0]["prop_id"]
+    zoom_slide_updates = slide_zoom_in(slider_values)
 
-    update_all = False
+    if selection_0 == "speed":
+        datatype = "vehicle-speed"
+        unit = "kmh"
+    elif selection_0 == "count":
+        datatype = "vehicle-count"
+        unit = "cars"
+    else:
+        datatype = "vehicle-gap-time"
+        unit = "seconds"
 
-    if ctx.triggered:
-        if len(ctx.triggered) > 1:
-            update_all = True
+    if "drop" in trigger:
 
-    if update_all:
-        speed_values = db.latest_readings("vehicle-speed")
-        count_values = db.latest_readings("vehicle-count")
-        gap_values = db.latest_readings("vehicle-gap-time")
+        new_times_utc = db.n_latest_readings("time", n + 1)[0]
 
-        speedbar.set_data(speed_values, stations, "kmh")
-        countbar.set_data(count_values, stations, "cars")
-        gapbar.set_data(gap_values, stations, "s")
+        new_data = db.n_latest_readings(datatype, n + 1)
+        new_timestamp = new_times_utc[-1]
 
-        hplot.set_primary(hist_utc, values1, "kmh")
-        hplot.set_seconary(values2)
+        old_timestamp = scatter.labels[-1]
 
-    windowed_primary = hplot.val_primary[i:j]
-    windowed_secondary = hplot.val_secondary[i:j]
-    windowed_time = hplot.time[i:j]
+        if new_timestamp != old_timestamp:
+            new_times_utc = new_times_utc[:-1]
+            new_hist_dict = {s: l[:-1] for s, l in zip(stations, new_data)}
+        else:
+            new_times_utc = new_times_utc[1:]
+            new_hist_dict = {s: l[1:] for s, l in zip(stations, new_data)}
 
-    hplot.update_primary(windowed_time, windowed_primary)
-    hplot.update_secondary(windowed_time, windowed_secondary)
+        new_primary_values = new_hist_dict[selection_1]
+        new_secondary_values = new_hist_dict[selection_2]
 
-    return speedbar.fig, countbar.fig, gapbar.fig, hplot.fig
+        scatter.update_primary_data(new_primary_values)
+        scatter.update_secondary_data(new_secondary_values)
+        scatter.set_labels(new_times_utc)
+        scatter.set_unit(unit)
+
+        scatter.zoom_in(zoom_slide_updates[1], zoom_slide_updates[2])
+
+    if "interval" in trigger:
+        new_times_utc = db.n_latest_readings("time", n)[0]
+        new_data = db.n_latest_readings(datatype, n)
+        new_hist_dict = {s: l for s, l in zip(stations, new_data)}
+
+        new_speed_values = db.latest_readings("vehicle-speed")
+        new_count_values = db.latest_readings("vehicle-count")
+        new_gap_values = db.latest_readings("vehicle-gap-time")
+
+        speedbar.set_data(new_speed_values, stations, "kmh")
+        countbar.set_data(new_count_values, stations, "cars")
+        gapbar.set_data(new_gap_values, stations, "s")
+
+        new_primary_values = new_hist_dict[selection_1]
+        new_secondary_values = new_hist_dict[selection_2]
+
+        scatter.update_primary_data(new_primary_values)
+        scatter.update_secondary_data(new_secondary_values)
+        scatter.set_labels(new_times_utc)
+        scatter.set_unit(unit)
+
+        scatter.zoom_in(zoom_slide_updates[1], zoom_slide_updates[2])
+
+    return [scatter.base_fig, speedbar.fig, countbar.fig, gapbar.fig]
 
 
 if __name__ == "__main__":

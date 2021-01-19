@@ -130,7 +130,30 @@ html,body{
     background-color: #303030;
     width: 50%;
     color: #DEA916;
+    border: 0px !important;
 }
+
+
+
+#drop-0 .Select-control{
+    background-color: #303030 !important;
+    border: 0px !important;
+    width: 50%;
+}
+
+#drop-0 .Select-value-label{
+    color: white !important;;
+}
+
+#drop-0 .Select-menu-outer {
+    background-color: #303030;
+    width: 50%;
+    color: white;
+    border: 0px !important;
+
+}
+
+
 
 .rc-slider-handle{
     border: solid 2px #333;
@@ -147,18 +170,14 @@ html,body{
     background-color: #474747;
 }
 
-#hist-slider{
+#cust-slider{
     padding-top: 48px !important;
     padding-left: 0px !important;
     padding-right: 0px !important;
+    padding-bottom: 32px !important;
+
 }
 
-.patch-slider-disp{
-    color: white;
-    display: inline-block;
-    border: 1px solid white;
-    position: absolute;
-}
 
 
 /*.Select-value{*/
