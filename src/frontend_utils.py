@@ -32,7 +32,7 @@ def date_convert(utc_time_str, target_tz="America/New_York"):
     utc_time = utc_time.replace(tzinfo=pytz.utc)
     converted = utc_time.astimezone(pytz.timezone(target_tz))
 
-    return converted.strftime("%m/%d"), converted.strftime("%H:%m")
+    return converted.strftime("%m-%d %H:%m")
 
 
 class RedisDB:
