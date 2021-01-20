@@ -5,6 +5,7 @@ import plotly.express as px
 import dash_html_components as html
 import dash_core_components as dcc
 import dash_bootstrap_components as dbc
+import frontend_utils
 import pandas as pd
 
 
@@ -19,10 +20,14 @@ class CustomTable:
                                                             "borderRadius": "0px"
                                                             })
         self.table = None
+        self.table_div=html.Div(id="table-div")
+        self.df=None
 
-    def set_data(self, df):
-        c = [{"name": i, "id": i} for i in df.columns]
-        self.table = dash_table.DataTable(data=df.to_dict('records'),
+    def set_data(self, df=None):
+        if df is not None:
+            self.df=df
+        c = [{"name": i, "id": i} for i in self.df.columns]
+        self.table = dash_table.DataTable(data=self.df.to_dict('records'),
                                           columns=c,
                                           id="table",
                                           style_cell={"textAlign": "center",
@@ -33,34 +38,40 @@ class CustomTable:
                                           cell_selectable=False,
                                           style_cell_conditional=[{'if': {'column_id': c}, 'textAlign': 'left'} for c in
                                                                   ['corner']])
-        self.card.children = [self.cardheader, self.table]
+        self.table_div.children=self.table
+        self.card.children = [self.cardheader, self.table_div]
+
+    def refresh(self):
+        self.set_data()
+
+
 
 class CustomDropdown:
-    def __init__(self,options):
-        self.options=options
+    def __init__(self, options):
+        self.options = options
 
         self.dropdown0 = dcc.Dropdown(
             id='drop-0',
             value="speed",
-            options=[{"label": o, 'value': o} for o in ["speed","count","gap time"]],
+            options=[{"label": o, 'value': o} for o in ["speed", "count", "gap time"]],
             clearable=False,
         )
 
-        self.dropdown1=dcc.Dropdown(
+        self.dropdown1 = dcc.Dropdown(
             id='drop-1',
             value="station 1",
             options=[{"label": o, 'value': o} for o in self.options],
             clearable=False,
         )
-        self.dropdown2=dcc.Dropdown(
+        self.dropdown2 = dcc.Dropdown(
             id='drop-2',
             value="station 2",
             options=[{"label": o, 'value': o} for o in self.options],
             clearable=False,
         )
 
-        self.layout=dbc.Row([
-            dbc.Col(self.dropdown1, width={"size": 3, "offset":2}),
+        self.layout = dbc.Row([
+            dbc.Col(self.dropdown1, width={"size": 3, "offset": 2}),
             dbc.Col(self.dropdown2, width={"size": 3}),
             dbc.Col(self.dropdown0, width={"size": 2})
         ],
@@ -69,7 +80,7 @@ class CustomDropdown:
 
 
 class CustomSlider:
-    def __init__(self, default_range=60, min_gap=60, cid="cust-slider"):
+    def __init__(self, default_range=120, min_gap=60, cid="cust-slider"):
         self.default_range = default_range
         self.min_gap = min_gap
         self.id = cid
@@ -99,13 +110,15 @@ class CustomSlider:
             self.handle_left,
             self.handle_right,
             self.slider
-        ], style={"position": "relative", "width": "90%", "marginLeft": "5%", "marginBottom": "32px"})
+        ], style={"position": "relative", "width": "85%", "marginLeft": "11.5%", "marginBottom": "32px"})
 
 
 class CustomScatter:
-    def __init__(self, config, freq=60600):
+    def __init__(self, config):
         self.config = config
-        self.freq = freq
+
+        self.unit = None
+        self.labels = None
 
         self.graph = dcc.Graph(className="graphs", id="hist-plot")
         self.base_fig = go.Figure()
@@ -122,8 +135,13 @@ class CustomScatter:
                        zeroline=False,
                        ),
             yaxis=dict(showgrid=False,
-                       title="",
-                       visible=False)
+                       visible=True,
+                       tickfont={"color": "#7a7a7a"},
+                       rangemode="tozero",
+                       zeroline=False,
+
+                       ),
+            font_color="#7a7a7a"
         )
 
         self.primary_data = None
@@ -132,13 +150,19 @@ class CustomScatter:
         self.primary_fig = None
         self.secondary_fig = None
 
-        self.unit = None
-        self.labels = None
-
         self.graph.figure = self.base_fig
 
     def set_unit(self, unit):
         self.unit = unit
+        self.base_fig.update_layout(
+            title=dict(
+                text=self.unit,
+                x=0.0,
+                y=1.0,
+                xanchor="left",
+                yanchor="top"
+            )
+        )
 
     def set_labels(self, labels):
         self.labels = labels
@@ -203,7 +227,7 @@ class CustomScatter:
 
 
 class CustomBar:
-    def __init__(self, config, card_title, target_card, graph_id, update_freq=60600):
+    def __init__(self, config, card_title, target_card, graph_id):
         self.config = config
         self.card = target_card
         self.cardheader = dbc.CardHeader(card_title, style={"textAlign": "center",
@@ -213,23 +237,21 @@ class CustomBar:
                                                             "borderRadius": "0px"
                                                             })
         self.graph = dcc.Graph(className="graphs", id=graph_id)
-        self.interval = dcc.Interval(
-            id=graph_id + "-interval",
-            interval=update_freq,
-            n_intervals=0
-        )
-        self.card.children = [self.cardheader, self.graph, self.interval]
+        self.card.children = [self.cardheader, self.graph]
         self.fig = None
 
     def set_data(self, values, names, unit):
         x = np.arange(len(values))
         cap = np.ones(len(values)) * self.config['capsize'] * np.max(values)
-        ticktext = [str(i) + " " + unit for i in values]
+        threshold = 0.2 * np.max(values)
+        inside_ticktext = [str(i) + " " + unit if i > threshold else "" for i in values]
+        outside_ticktext = [str(i) + " " + unit if i <= threshold else "" for i in values]
+
         self.fig = px.bar(x=x, y=values)
         self.fig.update_traces(marker_color=self.config['barcolor'],
                                marker_line_color=self.config['barcolor'],
-                               text=ticktext,
-                               textposition="inside",
+                               text=inside_ticktext,
+                               textposition="outside",
                                textfont_color=self.config["textcolor"],
                                )
 
@@ -237,7 +259,10 @@ class CustomBar:
             x=x,
             y=cap,
             marker_color=self.config['capcolor'],
-            marker_line_color=self.config['capcolor']
+            marker_line_color=self.config['capcolor'],
+            text=outside_ticktext,
+            textposition="outside",
+            textfont_color=self.config['textcolor']
         )
 
         self.fig.add_trace(capfig)
@@ -259,7 +284,7 @@ class CustomBar:
 
 
 class CountdownSpinner:
-    def __init__(self, config, card_title, target_card, graph_id, update_freq=1010):
+    def __init__(self, config, card_title, target_card, graph_id):
         self.config = config
         self.card = target_card
         self.cardheader = dbc.CardHeader(card_title, style={"textAlign": "center",
@@ -291,8 +316,7 @@ class CountdownSpinner:
 
         self.graph = dcc.Graph(className="graphs", id=graph_id)
         self.graph.figure = self.fig
-        self.interval = dcc.Interval(id="countdown-timer-id", interval=update_freq, n_intervals=0)
-        self.card.children = [self.cardheader, self.graph, self.interval]
+        self.card.children = [self.cardheader, self.graph]
 
     def increment(self, time_elapsed, time_remaining):
         self.fig.update_traces(
@@ -302,6 +326,26 @@ class CountdownSpinner:
                                                  font_color=self.config["textcolor"],
                                                  font_size=16, x=0.5, y=0.5, showarrow=False)]
                                )
+
+class TimeStamp:
+    def __init__(self, config, card_title, target_card):
+        self.config = config
+        self.card = target_card
+        self.cardheader = dbc.CardHeader(card_title, style={"textAlign": "center",
+                                                            "padding": "0px",
+                                                            "border": "0px",
+                                                            "color": self.config['textcolor'],
+                                                            "borderRadius": "0px"
+                                                            })
+        self.stamp=""
+        self.text=html.H4(children=self.stamp,id="timestamp-text", style={"textAlign":"center", "height":"100%"})
+        self.card.children = [self.cardheader, html.Div(self.text, style={"margin":"auto"})]
+
+    def update_time(self,newstamp):
+        newstamp = frontend_utils.date_convert(newstamp)
+        newstamp = newstamp.strftime("%H:%M:%S")
+        self.stamp=newstamp
+
 
 
 def init_layout():
