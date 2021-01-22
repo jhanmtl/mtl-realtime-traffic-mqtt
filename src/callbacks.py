@@ -1,7 +1,7 @@
 import dash
 import frontend_utils
-from dash.dependencies import Input, Output
-import numpy as np
+import dash_html_components as html
+from dash.dependencies import Input, Output, State
 
 
 def init_callbacks(app, elements):
@@ -17,7 +17,10 @@ def init_callbacks(app, elements):
     countbar = elements['countbar']
     gapbar = elements['gapbar']
     table = elements['table']
-    countdown_duration=elements['countdown-duration']
+    countdown_duration = elements['countdown-duration']
+    cam_ids = elements['cam-ids']
+    cam_link = elements['cam-link']
+    streets = elements['streets']
 
     @app.callback(Output("pie-graph", "figure"),
                   Input("second-interval", "n_intervals"))
@@ -77,7 +80,7 @@ def init_callbacks(app, elements):
          Output('count-live-graph', "figure"),
          Output("gap-live-graph", "figure"),
          Output("timestamp-text", "children"),
-         Output("table-div","children")
+         Output("table-div", "children")
          ],
         [Input("cust-slider", "value"),
          Input("minute-interval", "n_intervals"),
@@ -158,5 +161,63 @@ def init_callbacks(app, elements):
 
             table.refresh()
 
-
         return [scatter.base_fig, speedbar.fig, countbar.fig, gapbar.fig, ts.stamp, table.table]
+
+    @app.callback(
+        [Output("camera-modal", "is_open"),
+         Output("modal-body", "children"),
+         Output("modal-header", "children"),
+         Output("station-camera-dropdown", "value")
+         ],
+        [Input("open-modal", "n_clicks"),
+         Input("close-modal", "n_clicks"),
+         Input("prev-camera", "n_clicks"),
+         Input("next-camera", "n_clicks")],
+        [
+            State("station-camera-dropdown", "value"),
+            State("camera-modal", "is_open")
+        ]
+    )
+    def view_traffic_cam(open_btn, close_btn, go_prev, go_next, selection, is_open):
+        ctx = dash.callback_context
+        trigger = ctx.triggered[0]["prop_id"]
+
+        if "open" in trigger:
+            camera_id = cam_ids[selection]
+            url = cam_link.format(camera_id)
+            img = html.Img(srcSet=url, style={"maxWidth": "300px"})
+            title = selection + ":  Notre-Dame/{}".format(streets[selection])
+
+            return [(not is_open), img, title, selection]
+
+        if "close" in trigger:
+            return [False, None, None, selection]
+
+        if "next" in trigger:
+            new_selection_num = int(selection.split(" ")[-1]) + 1
+            if new_selection_num > 9:
+                new_selection_num = 1
+
+            new_selection = "station " + str(new_selection_num)
+            camera_id = cam_ids[new_selection]
+            url = cam_link.format(camera_id)
+            img = html.Img(srcSet=url, style={"maxWidth": "300px"})
+            title = new_selection + ":  Notre-Dame/{}".format(streets[new_selection])
+
+            return [True, img, title, new_selection]
+
+        if "prev" in trigger:
+
+            new_selection_num = int(selection.split(" ")[-1]) - 1
+            if new_selection_num < 1:
+                new_selection_num = 9
+
+            new_selection = "station " + str(new_selection_num)
+            camera_id = cam_ids[new_selection]
+            url = cam_link.format(camera_id)
+            img = html.Img(srcSet=url, style={"maxWidth": "300px"})
+            title = new_selection + ":  Notre-Dame/{}".format(streets[new_selection])
+
+            return [True, img, title, new_selection]
+
+        return [False, None, None, selection]

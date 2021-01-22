@@ -111,7 +111,12 @@ def init_map(df):
 
     fig.update_traces(marker=dict(size=msize,
                                   color=mcolor
-                                  ))
+                                  ),
+                      mode="markers+text",
+                      text=["station {}".format(i+1) for i in range(9)],
+                      textposition="middle right",
+                      textfont_color="#ffffff"
+                      )
     fig.update_layout(margin=dict(l=16, r=16, t=16, b=16))
 
     return fig, mdata

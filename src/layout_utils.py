@@ -6,7 +6,6 @@ import dash_html_components as html
 import dash_core_components as dcc
 import dash_bootstrap_components as dbc
 import frontend_utils
-import pandas as pd
 
 
 class CustomTable:
@@ -37,7 +36,9 @@ class CustomTable:
                                                       "background": self.config['bgcolor']},
                                           cell_selectable=False,
                                           style_cell_conditional=[{'if': {'column_id': c}, 'textAlign': 'left'} for c in
-                                                                  ['corner']])
+                                                                  ['corner']],
+                                          ),
+
         self.table_div.children=self.table
         self.card.children = [self.cardheader, self.table_div]
 
@@ -347,6 +348,45 @@ class TimeStamp:
         self.stamp=newstamp
 
 
+def make_modal():
+
+
+    modal = dbc.Modal(
+        [
+            dbc.ModalHeader(id="modal-header"),
+            dbc.ModalBody(
+                dbc.Row([
+                    dbc.Col(
+                        dbc.Button("previous", id="prev-camera", style={"marginTop": "55%"}),
+                        width=3,
+                        style={"height": "100%"}
+                    ),
+                    dbc.Col(
+                        id="modal-body",
+                        width=6
+                    ),
+                    dbc.Col(
+                        dbc.Button("next", id="next-camera", style={"marginTop": "55%"}),
+                        width=3,
+                        style={"height": "100%"}
+                    )
+                ],
+                    style={"textAlign": "center"}
+                )
+            ),
+            dbc.ModalFooter(
+                dbc.Button(
+                    "Close", id="close-modal", className="ml-auto"
+                )
+            ),
+        ],
+        id="camera-modal",
+        centered=True,
+        size="lg"
+    )
+
+    return modal
+
 
 def init_layout():
     left_column = LeftColumn()
@@ -409,7 +449,9 @@ class RightColumn:
                     ], className="key-stat-row"),
 
                     # drop.get_layout()
-                ], className="title-key-stat-col"),
+                ],
+                    className="title-key-stat-col",
+                    width=7),
                 mapp.get_layout(),
             ], className="title-stat-map-row"),
             hist.get_layout()

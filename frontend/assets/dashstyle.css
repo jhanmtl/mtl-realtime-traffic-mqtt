@@ -24,16 +24,12 @@ html,body{
 
 .title-row{
     /*border: 1px dashed white;*/
-    height: 40%;
+    height: 50%;
 }
 
 .key-stat-row{
     /*border: 1px dashed white;*/
-    height: 60%;
-}
-
-.stat-col{
-    /*border: 1px dashed white;*/
+    height: 50%;
 }
 
 .substat-row{
@@ -148,13 +144,31 @@ html,body{
     color: white !important;;
 }
 
-#drop-0 .Select-menu-outer {
+
+
+#station-camera-dropdown .Select-menu-outer {
     background-color: #303030;
     width: 50%;
     color: white;
     border: 0px !important;
 
 }
+
+#station-camera-dropdown .Select-control{
+    background-color: #303030 !important;
+    /*border: 0px !important;*/
+    width: 66%;
+    border: 2px solid #4a4a4a;
+    margin-left: 17%;
+    margin-bottom: 8px;
+    margin-top: 8px;
+}
+
+#station-camera-dropdown .Select-value-label{
+    color: white !important;
+}
+
+
 
 
 
@@ -185,16 +199,11 @@ html,body{
 }
 
 
+.hlink{
+    color: #b0b0b0;
+    text-decoration: underline;
+}
 
-/*.Select-value{*/
-/*    !*background-color:#303030;*!*/
-/*    !*color:white !important;*!*/
-/*    border: 1px solid red;*/
-/*    width: 50%;*/
-/*}*/
-
-/*.control-panel-dropdown{*/
-/*    border:1px solid blue;*/
-/*    width: 50%;*/
-/*}*/
-
+.hlink:hover{
+    color:#b0b0b0;
+}
