@@ -38,8 +38,8 @@ def on_message(client, userdata, msg):
     prev_time = detector_values['CreateUtc']
 
     if now_time != prev_time and prev_time != 'init-time':
-        a_data=parse_aggregated_values(now_time, detector_values, det_id)
-        write_db(a_data,userdata[1])
+        a_data = parse_aggregated_values(now_time, detector_values, det_id)
+        write_db(a_data, userdata[1])
         print(a_data)
     else:
         if subj in detector_values:
@@ -47,13 +47,13 @@ def on_message(client, userdata, msg):
             detector_values['CreateUtc'] = now_time
 
 
-def initialize_db(db,active_ids,data_template):
+def initialize_db(db, active_ids, data_template):
     for each_id in active_ids:
-        if db.exists(each_id)==0:
-            db.set(each_id,json.dumps(data_template))
+        if db.exists(each_id) == 0:
+            db.set(each_id, json.dumps(data_template))
 
 
-def initialize_incoming_data(active_ids,value_types):
+def initialize_incoming_data(active_ids, value_types):
     incoming_data = {}
     for each_id in active_ids:
         incoming_data[each_id] = {}
@@ -63,12 +63,17 @@ def initialize_incoming_data(active_ids,value_types):
     return incoming_data
 
 
-def write_db(new_data,db):
-    det_id=new_data['id']
-    existing_data=json.loads(db.get(det_id))
+def write_db(new_data, db):
+    det_id = new_data['id']
+    existing_data = json.loads(db.get(det_id))
     for key in existing_data:
+        # keep up to 24 hrs worth of data, with 1 datapoint per minute.
+        # probably a better data structure than poping a list at idx 0.
+        # but small enough to not impact performance. maybe future improve
+        if len(existing_data[key]) == 1440:
+            existing_data[key].pop(0)
         existing_data[key].append(new_data[key])
-    db.set(det_id,json.dumps(existing_data))
+    db.set(det_id, json.dumps(existing_data))
 
 
 def extract_detector_id(topic):

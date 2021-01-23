@@ -49,7 +49,7 @@ def publish(client, topics):
             msg=json.dumps(msg)
             client.publish(t, msg)
 
-        time.sleep(10)
+        time.sleep(5)
 
 
 def main():
