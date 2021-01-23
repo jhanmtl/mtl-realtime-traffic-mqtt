@@ -1,7 +1,4 @@
 import dash
-import dash_bootstrap_components as dbc
-import dash_html_components as html
-import dash_core_components as dcc
 import layout_utils
 from dash.dependencies import Input, Output, State
 
@@ -11,7 +8,13 @@ import pandas as pd
 import json
 from layout_utils import *
 
-# ================= load configs ==============================================
+# configs and parameters
+n = 1000
+countdown_duration = 60
+m_freq = 60600
+s_freq = 1010
+cam_link = "http://www1.ville.montreal.qc.ca/Circulation-Cameras/GEN{}.jpeg"
+
 with open("./assets/bar_config.json", "r") as jfile:
     plot_config = json.load(jfile)
 
@@ -24,13 +27,8 @@ with open("./assets/slider_config.json", "r") as jfile:
 with open("./assets/desc.txt", "r") as tfile:
     desc = tfile.readlines()[0]
 
-cam_link = "http://www1.ville.montreal.qc.ca/Circulation-Cameras/GEN{}.jpeg"
 
-n = 1440
-countdown_duration = 60
-m_freq = 60600
-s_freq = 1010
-
+# dash intervals for countdown spinner (1s interval) and update plots with new data from redis (60s interval)
 minterval = dcc.Interval(
     id="minute-interval",
     interval=m_freq,
@@ -42,28 +40,37 @@ sinterval = dcc.Interval(
     interval=s_freq,
     n_intervals=0)
 
-# ================= instantiate db, fetch data =================================
+# read detector datasheet
+df = pd.read_csv("../data/detectors-active.csv")
+stations = ["station {}".format(i+1) for i in range(len(df))]
+cam_ids = df["id_camera"].values.tolist()
+cam_ids = {s: i for s,i in zip(stations,cam_ids)}
+streets = df["corner_st2"].values.tolist()
+streets = {s: st for s,st in zip(stations,streets)}
+
+# connect to redis, uses wrapper class for pyredis's Redis class from frontend_utils
 db = frontend_utils.RedisDB()
+
+# get readings
 speed_values = db.latest_readings("vehicle-speed")
 count_values = db.latest_readings("vehicle-count")
 gap_values = db.latest_readings("vehicle-gap-time")
 timestamp = db.latest_readings("time")[0]
 
-df = pd.read_csv("../data/detectors-active.csv")
-stations = ["station {}".format(i + 1) for i in range(len(df))]
-cam_ids = df["id_camera"].values.tolist()
-cam_ids = {"station {}".format(i + 1): cam_ids[i] for i in range(len(cam_ids))}
-streets = df["corner_st2"].values.tolist()
-streets = {"station {}".format(i + 1): streets[i] for i in range(len(streets))}
+hist_data = db.n_latest_readings("vehicle-speed", n)
+hist_utc = db.n_latest_readings("time", n)[0]
+hist_dict = {s: l for s, l in zip(stations, hist_data)}
 
-# ==================== app entry pt ===========================================
+
+# create app
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.DARKLY], title="mqtt-real", update_title=None)
+
+# init layout (empty cards, but in correct placement) with wrapper classes from layout_utils
 layout, left_column, right_column = layout_utils.init_layout()
 
+# get specified cards by name
 title_card = right_column.get_subpanel_by_id("title-pane").children
-
 camera_card = right_column.get_subpanel_by_id("stat-2").children.children
-
 map_card = right_column.get_subpanel_by_id('map-pane').children
 speed_card = left_column.get_subpanel_by_id("vspeed").children
 count_card = left_column.get_subpanel_by_id("vcount").children
@@ -73,98 +80,23 @@ timestamp_card = right_column.get_subpanel_by_id('stat-4').children
 hist_card = right_column.get_subpanel_by_id("hist-pane").children
 table_card = left_column.get_subpanel_by_id("aux").children
 
-# ========================= title stuff ======================================
-intro_desc = html.P(
-    [
-        html.H4("Montreal Real Time Traffic via MQTT",
-                style={"textAlign": "center", "textDecoration": "underline", "marginBottom": "16px",
-                       "color": "#b0b0b0"}),
-        "This project performs realtime IoT data fetching and visualization from 9 thermal and radar sensors embedded "
-        "along Rue Notre-Dame by the City of Montreal for its Open Data initiative. ",
-        html.Br(),
-        html.Br(),
-        "Each sensor publishes traffic data regarding vehicle speed, count, and gaptime in 60 second intervals over the mqtt protocol. "
-        "Details about the data source can be found ",
-        html.A("here. ",
-               href="https://donnees.montreal.ca/ville-de-montreal/circulation-mobilite-temps-reel",
-               target="_blank",
-               className="hlink"),
-        html.Br(),
-        html.Br(),
-        "Technology involved in building this application include paho-mqtt for data subscription, Dash for realtime visualization, and "
-        "Redis as an in-memory database . See more details at the ",
-        html.A("project repo.",
-               href="https://github.com/jhanmtl/mtl-realtime-traffic-mqtt",
-               target="_blank",
-               className="hlink")
-    ],
-    style={"textAlign": "justify"}
-)
+# populate cards with texts and/or maps and plots with wrapper definitions or classes from layout_utils
 
-title_layout = html.Div([intro_desc],
-                        style={"textAlign": "justify", "margin": "16px", "color": "#7a7a7a"})
+title_card.children = layout_utils.make_title()
+spinner = CountdownSpinner(plot_config, "seconds to next update", refresh_card, "pie-graph")
+ts = TimeStamp(plot_config, "readings as of ", timestamp_card)
+ts.update_time(timestamp)
 
-title_card.children = title_layout
-
-# ======================= camera modal stuff ==================================
-camera_header = dbc.CardHeader("camera access", style={"textAlign": "center",
-                                                               "padding": "0px",
-                                                               "border": "0px",
-                                                               "color": plot_config['textcolor'],
-                                                               "borderRadius": "0px"
-                                                               })
-
-camera_text = html.P(["Montreal also provides realtime feed of traffic cameras that update at approximately 5 minute intervals. "
-                      "Select to view feed of traffic cameras located at detector locations.",
-                      ],
-                     style={"margin": "16px", "textAlign": "justify", "color": "#7a7a7a"}
-                     )
-btn = dbc.Button("view traffic cam", id="open-modal", style={"marginTop": "16px"})
-modal = layout_utils.make_modal()
-dropdown = dcc.Dropdown(
-    id="station-camera-dropdown",
-    value="station 1",
-    options=[{"label": o, 'value': o} for o in stations],
-    clearable=False
-)
-
-modal_layout = html.Div([html.Div([camera_header,
-                                   dropdown,
-                                   modal,
-                                   btn
-                                   ], style={"textAlign": "center"}),
-                         camera_text
-                         ],
-                        )
-
-camera_card.children = modal_layout
-
-# =======================table stuff ==========================================
-table_summary = {
-    "station": (np.arange(len(stations)) + 1).tolist(),
-    "speed (kmh)": speed_values,
-    "count (cars)": count_values,
-    "gap time (s)": gap_values
-}
-table_summary = pd.DataFrame.from_dict(table_summary)
-table_summary["corner"] = df["corner_st2"]
-table_summary = table_summary[["station", "corner", "speed (kmh)", "count (cars)", "gap time (s)"]]
+camera_card.children = layout_utils.make_modal(plot_config,stations)
 
 table = CustomTable(plot_config, "detector metrics summary", table_card)
-table.set_data(table_summary)
+table_data=frontend_utils.generate_table_data(df,speed_values,count_values,gap_values)
+table.set_data(table_data)
 
-# ================== map stuff ================================================
-map_fig, map_data = frontend_utils.init_map(df)
+map_fig, map_data = layout_utils.init_map(df)
 map_card.figure = map_fig
 map_fig.update_layout(paper_bgcolor="gray", margin=dict(l=0, r=0, b=0, t=0))
 
-# ================== countdown spinner =======================================
-spinner = CountdownSpinner(plot_config, "seconds to next update", refresh_card, "pie-graph")
-
-# ================== time stamp stuff ========================================
-ts = TimeStamp(plot_config, "readings as of ", timestamp_card)
-ts.update_time(timestamp)
-# ================== bar plots ===============================================
 speedbar = CustomBar(plot_config, "speed dectected", speed_card, "speed-live-graph")
 countbar = CustomBar(plot_config, "vehicles counted", count_card, "count-live-graph")
 gapbar = CustomBar(plot_config, "gap time between vehicles", gap_card, "gap-live-graph")
@@ -173,41 +105,31 @@ speedbar.set_data(speed_values, stations, "kmh")
 countbar.set_data(count_values, stations, "cars")
 gapbar.set_data(gap_values, stations, "s")
 
-# =================== hist scatter plot =====================================
-hist_data = db.n_latest_readings("vehicle-speed", n)
-
-n = len(hist_data[0])
-
-hist_utc = db.n_latest_readings("time", n)[0]
-hist_dict = {s: l for s, l in zip(stations, hist_data)}
-
-primary_values = hist_dict["station 1"]
-secondary_values = hist_dict["station 2"]
+# the historic scatter plot is more involved with the choice to choose 2 stations and a data type to compare
+# initially start with station1, station2, and vehicle speed
+cardheader = layout_utils.make_header("historic data over 24 hrs - use sliders and dropdown to select range and type",
+                                      plot_config)
 
 scatter = CustomScatter(plot_config)
 slider = CustomSlider()
 dropdown = CustomDropdown(stations)
 
-cardheader = dbc.CardHeader("historic data over 24 hrs - use sliders and dropdown to select range and type",
-                            style={"textAlign": "center",
-                                   "padding": "0px",
-                                   "border": "0px",
-                                   "color": plot_config['textcolor'],
-                                   "borderRadius": "0px"
-                                   })
+primary_values = hist_dict["station 1"]
+secondary_values = hist_dict["station 2"]
 
 scatter.set_unit("kmh")
 scatter.set_labels(hist_utc)
-
 scatter.set_primary_data(primary_values)
 scatter.set_secondary_data(secondary_values)
-
 slider.set_labels(hist_utc)
 
 hist_card.children = [cardheader, dropdown.layout, scatter.graph, slider.layout]
 
+# assign populated layout to app, along with interval components for updating
 app.layout = html.Div([layout, minterval, sinterval])
 
+# current way to pass objects so that they can be used by callback methods in the callbacks.py module
+# probably a better way exists, to be investigated in future
 elements = {
     "spinner": spinner,
     "timestamp": ts,

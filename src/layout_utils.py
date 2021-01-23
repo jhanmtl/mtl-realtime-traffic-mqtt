@@ -5,6 +5,8 @@ import plotly.express as px
 import dash_html_components as html
 import dash_core_components as dcc
 import dash_bootstrap_components as dbc
+import json
+import os
 import frontend_utils
 
 
@@ -12,19 +14,14 @@ class CustomTable:
     def __init__(self, config, card_title, target_card):
         self.config = config
         self.card = target_card
-        self.cardheader = dbc.CardHeader(card_title, style={"textAlign": "center",
-                                                            "padding": "0px",
-                                                            "border": "0px",
-                                                            "color": self.config['textcolor'],
-                                                            "borderRadius": "0px"
-                                                            })
+        self.cardheader = make_header(card_title,config)
         self.table = None
-        self.table_div=html.Div(id="table-div")
-        self.df=None
+        self.table_div = html.Div(id="table-div")
+        self.df = None
 
     def set_data(self, df=None):
         if df is not None:
-            self.df=df
+            self.df = df
         c = [{"name": i, "id": i} for i in self.df.columns]
         self.table = dash_table.DataTable(data=self.df.to_dict('records'),
                                           columns=c,
@@ -39,12 +36,11 @@ class CustomTable:
                                                                   ['corner']],
                                           ),
 
-        self.table_div.children=self.table
+        self.table_div.children = self.table
         self.card.children = [self.cardheader, self.table_div]
 
     def refresh(self):
         self.set_data()
-
 
 
 class CustomDropdown:
@@ -231,12 +227,7 @@ class CustomBar:
     def __init__(self, config, card_title, target_card, graph_id):
         self.config = config
         self.card = target_card
-        self.cardheader = dbc.CardHeader(card_title, style={"textAlign": "center",
-                                                            "padding": "0px",
-                                                            "border": "0px",
-                                                            "color": self.config['textcolor'],
-                                                            "borderRadius": "0px"
-                                                            })
+        self.cardheader = make_header(card_title,config)
         self.graph = dcc.Graph(className="graphs", id=graph_id)
         self.card.children = [self.cardheader, self.graph]
         self.fig = None
@@ -288,12 +279,7 @@ class CountdownSpinner:
     def __init__(self, config, card_title, target_card, graph_id):
         self.config = config
         self.card = target_card
-        self.cardheader = dbc.CardHeader(card_title, style={"textAlign": "center",
-                                                            "padding": "0px",
-                                                            "border": "0px",
-                                                            "color": self.config['textcolor'],
-                                                            "borderRadius": "0px"
-                                                            })
+        self.cardheader = make_header(card_title,config)
         self.fig = px.pie(values=[30, 30],
                           color_discrete_sequence=[self.config["capcolor"], self.config["barcolor"]]
                           )
@@ -328,77 +314,20 @@ class CountdownSpinner:
                                                  font_size=16, x=0.5, y=0.5, showarrow=False)]
                                )
 
+
 class TimeStamp:
     def __init__(self, config, card_title, target_card):
         self.config = config
         self.card = target_card
-        self.cardheader = dbc.CardHeader(card_title, style={"textAlign": "center",
-                                                            "padding": "0px",
-                                                            "border": "0px",
-                                                            "color": self.config['textcolor'],
-                                                            "borderRadius": "0px"
-                                                            })
-        self.stamp=""
-        self.text=html.H4(children=self.stamp,id="timestamp-text", style={"textAlign":"center", "height":"100%"})
-        self.card.children = [self.cardheader, html.Div(self.text, style={"margin":"auto"})]
+        self.cardheader = make_header(card_title,config)
+        self.stamp = ""
+        self.text = html.H4(children=self.stamp, id="timestamp-text", style={"textAlign": "center", "height": "100%"})
+        self.card.children = [self.cardheader, html.Div(self.text, style={"margin": "auto"})]
 
-    def update_time(self,newstamp):
+    def update_time(self, newstamp):
         newstamp = frontend_utils.date_convert(newstamp)
         newstamp = newstamp.strftime("%H:%M:%S")
-        self.stamp=newstamp
-
-
-def make_modal():
-
-
-    modal = dbc.Modal(
-        [
-            dbc.ModalHeader(id="modal-header"),
-            dbc.ModalBody(
-                dbc.Row([
-                    dbc.Col(
-                        dbc.Button("previous", id="prev-camera", style={"marginTop": "55%"}),
-                        width=3,
-                        style={"height": "100%"}
-                    ),
-                    dbc.Col(
-                        id="modal-body",
-                        width=6
-                    ),
-                    dbc.Col(
-                        dbc.Button("next", id="next-camera", style={"marginTop": "55%"}),
-                        width=3,
-                        style={"height": "100%"}
-                    )
-                ],
-                    style={"textAlign": "center"}
-                )
-            ),
-            dbc.ModalFooter(
-                dbc.Button(
-                    "Close", id="close-modal", className="ml-auto"
-                )
-            ),
-        ],
-        id="camera-modal",
-        centered=True,
-        size="lg"
-    )
-
-    return modal
-
-
-def init_layout():
-    left_column = LeftColumn()
-    right_column = RightColumn()
-
-    layout = html.Div(dbc.Row([
-        left_column.get_layout(),
-        right_column.get_layout()
-    ], className="container-row"),
-        className="base-div")
-
-    return layout, left_column, right_column
+        self.stamp = newstamp
 
 
 class LeftColumn:
@@ -424,7 +353,8 @@ class LeftColumn:
 class RightColumn:
     def __init__(self):
         title = TitlePane()
-        stat2 = dbc.Col(dbc.Row(card(), className="wrap-div"), className="stat-col", id="stat-2", style={"padding": 0}, width=8)
+        stat2 = dbc.Col(dbc.Row(card(), className="wrap-div"), className="stat-col", id="stat-2", style={"padding": 0},
+                        width=8)
         stat3 = dbc.Row(card(), className="substat-row", id="stat-3")
         stat4 = dbc.Row(card(), className="substat-row", id="stat-4")
         mapp = MapPane()
@@ -491,3 +421,203 @@ class TitlePane:
 
 def card():
     return dbc.Card(className="card")
+
+
+def init_layout():
+    left_column = LeftColumn()
+    right_column = RightColumn()
+
+    layout = html.Div(dbc.Row([
+        left_column.get_layout(),
+        right_column.get_layout()
+    ], className="container-row"),
+        className="base-div")
+
+    return layout, left_column, right_column
+
+
+def init_map(df):
+    curdir = os.path.dirname(__file__)
+    basedir = os.path.abspath(os.path.join(curdir, os.pardir))
+    creddir = os.path.join(basedir, "frontend/cred")
+
+    with open(os.path.join(creddir, "mpbx.txt"), "r") as f:
+        token = f.readline()
+
+    with open("assets/mapdata.json", "r") as f:
+        mdata = json.load(f)
+
+    px.set_mapbox_access_token(token)
+
+    init_lat = mdata["init-lat"]
+    init_lon = mdata["init-lon"]
+    bearing = mdata["bearing"]
+    zoom = mdata["zoom"]
+    style = mdata["style"]
+    mcolor = mdata["marker-color"]
+    msize = mdata["marker-size"]
+
+    fig = px.scatter_mapbox(df,
+                            lat="latitude",
+                            lon="longitude",
+                            center={'lat': init_lat, 'lon': init_lon},
+                            zoom=zoom,
+                            mapbox_style=style,
+                            hover_name="corner_st2"
+                            )
+    fig.update_mapboxes(
+        bearing=bearing,
+    )
+
+    fig.update_traces(marker=dict(size=msize,
+                                  color=mcolor
+                                  ),
+                      mode="markers+text",
+                      text=["station {}".format(i + 1) for i in range(9)],
+                      textposition="middle right",
+                      textfont_color="#ffffff"
+                      )
+    fig.update_layout(margin=dict(l=16, r=16, t=16, b=16))
+
+    return fig, mdata
+
+
+def make_title():
+    intro_desc = html.P(
+        [
+            html.H4("Montreal Real Time Traffic via MQTT",
+                    style={"textAlign": "center", "textDecoration": "underline", "marginBottom": "16px",
+                           "color": "#b0b0b0"}
+                    ),
+            "This project performs realtime IoT data fetching and visualization from 9 thermal and radar sensors "
+            "embedded along Rue Notre-Dame by the City of Montreal for its Open Data initiative. ",
+            html.Br(),
+            html.Br(),
+            "Each sensor publishes traffic data regarding vehicle speed, count, and gaptime in 60 second intervals over"
+            " the mqtt protocol. Details about the data source can be found ",
+            html.A("here. ",
+                   href="https://donnees.montreal.ca/ville-de-montreal/circulation-mobilite-temps-reel",
+                   target="_blank",
+                   className="hlink"),
+            html.Br(),
+            html.Br(),
+            "Technology involved in building this application include paho-mqtt for data subscription, Dash for "
+            "realtime visualization, and Redis as an in-memory database. See more details at the ",
+            html.A("project repo.",
+                   href="https://github.com/jhanmtl/mtl-realtime-traffic-mqtt",
+                   target="_blank",
+                   className="hlink")
+        ],
+        style={"textAlign": "justify"}
+    )
+
+    title_layout = html.Div([intro_desc],
+                            style={"textAlign": "justify", "margin": "16px", "color": "#7a7a7a"})
+
+    return title_layout
+
+
+def make_modal(plot_config, stations):
+
+    camera_header = dbc.CardHeader("camera access", style={"textAlign": "center",
+                                                           "padding": "0px",
+                                                           "border": "0px",
+                                                           "color": plot_config['textcolor'],
+                                                           "borderRadius": "0px"
+                                                           })
+
+    camera_text = html.P(
+        ["Montreal also provides realtime feed of traffic cameras that update at approximately 5 minute intervals. "
+         "Select to view feed of traffic cameras located at detector locations.",
+         ],
+        style={"margin": "16px", "textAlign": "justify", "color": "#7a7a7a"}
+        )
+    btn = dbc.Button("view traffic cam", id="open-modal", style={"marginTop": "16px"})
+
+    modal = dbc.Modal(
+        [
+            dbc.ModalHeader(id="modal-header"),
+            dbc.ModalBody(
+                dbc.Row([
+                    dbc.Col(
+                        dbc.Button("previous", id="prev-camera", style={"marginTop": "55%"}),
+                        width=3,
+                        style={"height": "100%"}
+                    ),
+                    dbc.Col(
+                        id="modal-body",
+                        width=6
+                    ),
+                    dbc.Col(
+                        dbc.Button("next", id="next-camera", style={"marginTop": "55%"}),
+                        width=3,
+                        style={"height": "100%"}
+                    )
+                ],
+                    style={"textAlign": "center"}
+                )
+            ),
+            dbc.ModalFooter(
+                dbc.Button(
+                    "Close", id="close-modal", className="ml-auto"
+                )
+            ),
+        ],
+        id="camera-modal",
+        centered=True,
+        size="lg"
+    )
+
+    dropdown = dcc.Dropdown(
+        id="station-camera-dropdown",
+        value="station 1",
+        options=[{"label": o, 'value': o} for o in stations],
+        clearable=False
+    )
+
+    modal_layout = html.Div([html.Div([camera_header,
+                                       dropdown,
+                                       modal,
+                                       btn
+                                       ], style={"textAlign": "center"}),
+                             camera_text
+                             ],
+                            )
+
+    return modal_layout
+
+def init_scatter(scatter,slider,dropdown,db,n,stations,config):
+
+    hist_data = db.n_latest_readings("vehicle-speed", n)
+    n = len(hist_data[0])
+
+    hist_utc = db.n_latest_readings("time", n)[0]
+    hist_dict = {s: l for s, l in zip(stations, hist_data)}
+
+    primary_values = hist_dict["station 1"]
+    secondary_values = hist_dict["station 2"]
+
+    cardheader = make_header(
+        "historic data over 24 hrs - use sliders and dropdown to select range and type",
+        config)
+
+    scatter.set_unit("kmh")
+    scatter.set_labels(hist_utc)
+
+    scatter.set_primary_data(primary_values)
+    scatter.set_secondary_data(secondary_values)
+
+    slider.set_labels(hist_utc)
+
+    return [cardheader, dropdown.layout, scatter.graph, slider.layout]
+
+
+
+def make_header(text,config):
+    return dbc.CardHeader(text,
+                   style={"textAlign": "center",
+                          "padding": "0px",
+                          "border": "0px",
+                          "color": config['textcolor'],
+                          "borderRadius": "0px"
+                          })

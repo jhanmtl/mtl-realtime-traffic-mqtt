@@ -1,89 +1,82 @@
-html,body{
-    height:100%;
+html, body {
+    height: 100%;
     width: 100%;
     margin: 0px;
     background: dimgray;
 }
 
-.base-div{
-    height:100vh;
+.base-div {
+    height: 100vh;
     padding: 4px 16px 2px 16px;
 }
 
-.container-row{
+.container-row, .keystat-row {
     height: 100%;
 }
 
-.title-stat-map-row{
+.title-stat-map-row {
     height: 56%;
 }
 
-.title-row, .key-stat-row, .substat-row{
+.title-row, .key-stat-row, .substat-row {
     height: 50%;
 }
 
 
-.map-col{
-    /*border: 1px dashed white;*/
+.map-col {
     padding: 4px;
     height: 100%;
 }
 
-.keystat-row{
-    /*border: 1px dashed white;*/
-    height: 100%;
-}
-
-.top-left-pane{
-    /*border: 1px dashed white;*/
+.top-left-pane {
     height: 34%;
 }
 
-.speed-plot,.count-plot,.time-plot{
-    /*border: 1px dashed white;*/
+.speed-plot, .count-plot, .time-plot {
     height: 22%;
 }
 
-.historic-plot{
+.historic-plot {
     height: 44%;
 }
 
-#hist-plot{
+#hist-plot {
     padding-left: 64px;
 }
 
-.graphs{
+.graphs {
     height: 100%;
     width: 100%;
 }
-#table{
+
+#table {
     color: lightgray;
 }
 
-.card{
+.card {
     width: 100%;
     margin: 4px;
     overflow: hidden;
     border-radius: 0;
 }
 
-.wrap-div{
+.wrap-div {
     height: 100%;
     margin: 0;
 }
 
-.pbar{
+.pbar {
     background: #00a99d;
 }
 
-#drop-1 .Select-control{
+#drop-1 .Select-control {
     background-color: #303030 !important;
     border: 0px !important;
     width: 50%;
     height: 25%;
 }
 
-#drop-1 .Select-value-label{
+#drop-1 .Select-value-label {
     color: #00a99d !important;;
 }
 
@@ -96,13 +89,13 @@ html,body{
     overflow-y: hidden !important;
 }
 
-#drop-2 .Select-control{
+#drop-2 .Select-control {
     background-color: #303030 !important;
     border: 0px !important;
     width: 50%;
 }
 
-#drop-2 .Select-value-label{
+#drop-2 .Select-value-label {
     color: #DEA916 !important;;
 }
 
@@ -114,18 +107,15 @@ html,body{
 }
 
 
-
-#drop-0 .Select-control{
+#drop-0 .Select-control {
     background-color: #303030 !important;
     border: 0px !important;
     width: 50%;
 }
 
-#drop-0 .Select-value-label{
+#drop-0 .Select-value-label {
     color: white !important;;
 }
-
-
 
 #station-camera-dropdown .Select-menu-outer {
     background-color: #303030;
@@ -135,9 +125,8 @@ html,body{
 
 }
 
-#station-camera-dropdown .Select-control{
+#station-camera-dropdown .Select-control {
     background-color: #303030 !important;
-    /*border: 0px !important;*/
     width: 40%;
     border: 2px solid #4a4a4a;
     margin-left: 29%;
@@ -145,15 +134,12 @@ html,body{
     margin-top: 32px;
 }
 
-#station-camera-dropdown .Select-value-label{
+#station-camera-dropdown .Select-value-label {
     color: white !important;
 }
 
 
-
-
-
-.rc-slider-handle{
+.rc-slider-handle {
     border: solid 2px #333;
     background-color: #999999;
     height: 14px;
@@ -164,27 +150,27 @@ html,body{
     background-color: #999999;
 }
 
-.rc-slider-rail{
+.rc-slider-rail {
     background-color: #4a4a4a;
 }
 
-#cust-slider{
+#cust-slider {
     padding-top: 18px !important;
     padding-left: 0px !important;
     padding-right: 0px !important;
     padding-bottom: 18px !important;
 }
 
-#left-marker, #right-marker{
+#left-marker, #right-marker {
     color: #999999 !important;
 }
 
 
-.hlink{
+.hlink {
     color: #b0b0b0;
     text-decoration: underline;
 }
 
-.hlink:hover{
-    color:#b0b0b0;
+.hlink:hover {
+    color: #b0b0b0;
 }
