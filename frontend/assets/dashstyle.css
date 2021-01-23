@@ -14,33 +14,14 @@ html,body{
     height: 100%;
 }
 
-.full-vh-cols{
-    /*border: 1px dashed white;*/
-}
-
 .title-stat-map-row{
     height: 56%;
 }
 
-.title-row{
-    /*border: 1px dashed white;*/
+.title-row, .key-stat-row, .substat-row{
     height: 50%;
 }
 
-.key-stat-row{
-    /*border: 1px dashed white;*/
-    height: 50%;
-}
-
-.substat-row{
-    /*border: 1px dashed white;*/
-    height: 50%;
-}
-
-.drop-down-row{
-    /*border: 1px dashed white;*/
-    height: 16%;
-}
 
 .map-col{
     /*border: 1px dashed white;*/
@@ -157,11 +138,11 @@ html,body{
 #station-camera-dropdown .Select-control{
     background-color: #303030 !important;
     /*border: 0px !important;*/
-    width: 66%;
+    width: 40%;
     border: 2px solid #4a4a4a;
-    margin-left: 17%;
+    margin-left: 29%;
     margin-bottom: 8px;
-    margin-top: 8px;
+    margin-top: 32px;
 }
 
 #station-camera-dropdown .Select-value-label{

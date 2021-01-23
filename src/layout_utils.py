@@ -408,8 +408,7 @@ class LeftColumn:
         count_panel = dbc.Row(card(), className="count-plot", id="vcount")
         time_panel = dbc.Row(card(), className="time-plot", id="vgap")
         self.subpanels = [aux_panel, speed_panel, count_panel, time_panel]
-        self.layout = dbc.Col(self.subpanels, width=4,
-                              className="full-vh-cols")
+        self.layout = dbc.Col(self.subpanels, width=4)
 
     def get_layout(self):
         return self.layout
@@ -425,14 +424,12 @@ class LeftColumn:
 class RightColumn:
     def __init__(self):
         title = TitlePane()
-        stat1 = dbc.Col(dbc.Row(card(), className="wrap-div"), className="stat-col", id="stat-1", style={"padding": 0})
-        stat2 = dbc.Col(dbc.Row(card(), className="wrap-div"), className="stat-col", id="stat-2", style={"padding": 0})
+        stat2 = dbc.Col(dbc.Row(card(), className="wrap-div"), className="stat-col", id="stat-2", style={"padding": 0}, width=8)
         stat3 = dbc.Row(card(), className="substat-row", id="stat-3")
         stat4 = dbc.Row(card(), className="substat-row", id="stat-4")
-        drop = DropDown()
         mapp = MapPane()
         hist = HistoricPlot()
-        self.subpanels = [title.get_layout(), stat1, stat2, stat3, stat4, drop.get_layout(), mapp.get_layout(),
+        self.subpanels = [title.get_layout(), stat2, stat3, stat4, mapp.get_layout(),
                           hist.get_layout()]
 
         self.layout = dbc.Col([
@@ -440,7 +437,6 @@ class RightColumn:
                 dbc.Col([
                     title.get_layout(),
                     dbc.Row([
-                        stat1,
                         stat2,
                         dbc.Col([
                             stat3,
@@ -488,14 +484,6 @@ class HistoricPlot:
 class TitlePane:
     def __init__(self):
         self.layout = dbc.Row(card(), className="title-row", id="title-pane")
-
-    def get_layout(self):
-        return self.layout
-
-
-class DropDown:
-    def __init__(self):
-        self.layout = dbc.Row(card(), className="drop-down-row", id="drop-pane")
 
     def get_layout(self):
         return self.layout

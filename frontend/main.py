@@ -29,7 +29,6 @@ cam_link = "http://www1.ville.montreal.qc.ca/Circulation-Cameras/GEN{}.jpeg"
 n = 1440
 countdown_duration = 60
 m_freq = 60600
-
 s_freq = 1010
 
 minterval = dcc.Interval(
@@ -62,7 +61,9 @@ app = dash.Dash(__name__, external_stylesheets=[dbc.themes.DARKLY], title="mqtt-
 layout, left_column, right_column = layout_utils.init_layout()
 
 title_card = right_column.get_subpanel_by_id("title-pane").children
+
 camera_card = right_column.get_subpanel_by_id("stat-2").children.children
+
 map_card = right_column.get_subpanel_by_id('map-pane').children
 speed_card = left_column.get_subpanel_by_id("vspeed").children
 count_card = left_column.get_subpanel_by_id("vcount").children
@@ -79,10 +80,10 @@ intro_desc = html.P(
                 style={"textAlign": "center", "textDecoration": "underline", "marginBottom": "16px",
                        "color": "#b0b0b0"}),
         "This project performs realtime IoT data fetching and visualization from 9 thermal and radar sensors embedded "
-        "along Rue Notre-Dame by Montreal for its Open Data initiative. ",
+        "along Rue Notre-Dame by the City of Montreal for its Open Data initiative. ",
         html.Br(),
         html.Br(),
-        "Each sensor publishes traffic data in 60 second intervals over the mqtt protocol. "
+        "Each sensor publishes traffic data regarding vehicle speed, count, and gaptime in 60 second intervals over the mqtt protocol. "
         "Details about the data source can be found ",
         html.A("here. ",
                href="https://donnees.montreal.ca/ville-de-montreal/circulation-mobilite-temps-reel",
@@ -90,8 +91,8 @@ intro_desc = html.P(
                className="hlink"),
         html.Br(),
         html.Br(),
-        "Technology involved in building this application include paho-mqtt for data subscription, dash for visualization, and "
-        "redis as an in-memory database . See more details at the ",
+        "Technology involved in building this application include paho-mqtt for data subscription, Dash for realtime visualization, and "
+        "Redis as an in-memory database . See more details at the ",
         html.A("project repo.",
                href="https://github.com/jhanmtl/mtl-realtime-traffic-mqtt",
                target="_blank",
@@ -106,12 +107,19 @@ title_layout = html.Div([intro_desc],
 title_card.children = title_layout
 
 # ======================= camera modal stuff ==================================
-camera_text = html.P(["Select to view feed of traffic cameras located at detector locations.",
-                      " Note cameras update at 5 minute intervals"
+camera_header = dbc.CardHeader("camera access", style={"textAlign": "center",
+                                                               "padding": "0px",
+                                                               "border": "0px",
+                                                               "color": plot_config['textcolor'],
+                                                               "borderRadius": "0px"
+                                                               })
+
+camera_text = html.P(["Montreal also provides realtime feed of traffic cameras that update at approximately 5 minute intervals. "
+                      "Select to view feed of traffic cameras located at detector locations.",
                       ],
-                     style={"margin":"16px","textAlign":"justify","color":"#7a7a7a"}
-                    )
-btn = dbc.Button("view traffic cam", id="open-modal", style={"marginTop":"16px"})
+                     style={"margin": "16px", "textAlign": "justify", "color": "#7a7a7a"}
+                     )
+btn = dbc.Button("view traffic cam", id="open-modal", style={"marginTop": "16px"})
 modal = layout_utils.make_modal()
 dropdown = dcc.Dropdown(
     id="station-camera-dropdown",
@@ -120,11 +128,11 @@ dropdown = dcc.Dropdown(
     clearable=False
 )
 
-modal_layout = html.Div([html.Div([dropdown,
-                                  modal,
+modal_layout = html.Div([html.Div([camera_header,
+                                   dropdown,
+                                   modal,
                                    btn
-                                   ],style={"textAlign":"center"}),
-                         html.Br(),
+                                   ], style={"textAlign": "center"}),
                          camera_text
                          ],
                         )
@@ -214,15 +222,12 @@ elements = {
     "gapbar": gapbar,
     "table": table,
     "countdown-duration": countdown_duration,
-    'cam-ids':cam_ids,
-    "cam-link":cam_link,
-    "streets":streets
+    'cam-ids': cam_ids,
+    "cam-link": cam_link,
+    "streets": streets
 }
 
 callbacks.init_callbacks(app, elements)
-
-
-
 
 if __name__ == "__main__":
     app.run_server(debug=True, port=8080, dev_tools_ui=True)

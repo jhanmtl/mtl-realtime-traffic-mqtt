@@ -1,14 +1,5 @@
-import dash
-import dash_table
-import dash_core_components as dcc
-import dash_html_components as html
 import plotly.express as px
-import plotly.graph_objs as go
-from dash.dependencies import Input, Output, State
-
 import json
-import pandas as pd
-import numpy as np
 import os
 import redis
 import pytz
@@ -75,6 +66,13 @@ class RedisDB:
 
         return values
 
+    def get_earliest_timestamp(self):
+        self._update()
+        k=self.keys[0]
+        ts=self.readings[k]['time'][0]
+        return ts
+
+
 
 def init_map(df):
     curdir = os.path.dirname(__file__)
@@ -102,8 +100,8 @@ def init_map(df):
                             lon="longitude",
                             center={'lat': init_lat, 'lon': init_lon},
                             zoom=zoom,
-                            color='id',
-                            mapbox_style=style
+                            mapbox_style=style,
+                            hover_name="corner_st2"
                             )
     fig.update_mapboxes(
         bearing=bearing,
