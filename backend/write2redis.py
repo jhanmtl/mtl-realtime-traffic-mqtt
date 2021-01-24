@@ -11,4 +11,5 @@ for j in jfiles:
     j="../data/placeholders/"+j
     with open(j,"r") as f:
         data=json.load(f)
-        db.set(key,json.dumps(data))
+        trimmed_data={key:data[key][:200] for key in data}
+        db.set(key,json.dumps(trimmed_data))

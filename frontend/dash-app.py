@@ -40,7 +40,7 @@ import json
 from layout_utils import *
 
 # configs and parameters
-n = 1000
+n = 180
 countdown_duration = 60
 m_freq = 60600
 s_freq = 1010
@@ -140,7 +140,7 @@ cardheader = layout_utils.make_header("historic data over 24 hrs - use sliders a
                                       plot_config)
 
 scatter = CustomScatter(plot_config)
-slider = CustomSlider()
+slider = CustomSlider(default_range=60,min_gap=10)
 dropdown = CustomDropdown(stations)
 
 primary_values = hist_dict["station 1"]
@@ -181,4 +181,4 @@ elements = {
 callback_utils.init_callbacks(app, elements)
 
 if __name__ == "__main__":
-    app.run_server(debug=True, port=8080, dev_tools_ui=False)
+    app.run_server(debug=True, port=8080, dev_tools_ui=True)

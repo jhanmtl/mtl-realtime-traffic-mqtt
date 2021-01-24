@@ -220,6 +220,7 @@ class CustomScatter:
 
     def zoom_in(self, start, end):
         end += 1
+        end = min(end, len(self.primary_data))
         windowed_primary = self.primary_data[start:end]
         windowed_secondary = self.secondary_data[start:end]
         windowed_label = self.labels[start:end]
@@ -229,7 +230,7 @@ class CustomScatter:
         self.secondary_fig = self._make_fig(windowed_x, windowed_secondary, windowed_label, "comp-color-dark",
                                             "comp-color-bright")
 
-        self.base_fig.data = None
+        self.base_fig.data=[]
         self.base_fig.add_trace(self.primary_fig)
         self.base_fig.add_trace(self.secondary_fig)
 
