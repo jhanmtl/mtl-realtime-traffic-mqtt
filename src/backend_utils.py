@@ -115,8 +115,9 @@ def write_db(new_data, db):
         # keep up to 24 hrs worth of data, with 1 datapoint per minute.
         # probably a better data structure than poping a list at idx 0.
         # but small enough to not impact performance. maybe future improve
-        if len(existing_data[key]) == 1440:
-            existing_data[key].pop(0)
+        datalen=len(existing_data[key])
+        if datalen > 1440:
+            existing_data[key]=existing_data[key][datalen-1,datalen-1-1440]
         existing_data[key].append(new_data[key])
     db.set(det_id, json.dumps(existing_data))
 

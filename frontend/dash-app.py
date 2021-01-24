@@ -72,11 +72,11 @@ sinterval = dcc.Interval(
 
 # read detector datasheet
 df = pd.read_csv("../data/detectors-active.csv")
-stations = ["station {}".format(i+1) for i in range(len(df))]
+stations = ["station {}".format(i + 1) for i in range(len(df))]
 cam_ids = df["id_camera"].values.tolist()
-cam_ids = {s: i for s,i in zip(stations,cam_ids)}
+cam_ids = {s: i for s, i in zip(stations, cam_ids)}
 streets = df["corner_st2"].values.tolist()
-streets = {s: st for s,st in zip(stations,streets)}
+streets = {s: st for s, st in zip(stations, streets)}
 
 # connect to redis, uses wrapper class for pyredis's Redis class from frontend_utils
 db = frontend_utils.RedisDB()
@@ -90,7 +90,6 @@ timestamp = db.latest_readings("time")[0]
 hist_data = db.n_latest_readings("vehicle-speed", n)
 hist_utc = db.n_latest_readings("time", n)[0]
 hist_dict = {s: l for s, l in zip(stations, hist_data)}
-
 
 # create app
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.DARKLY], title="mqtt-real", update_title=None)
@@ -117,10 +116,10 @@ spinner = CountdownSpinner(plot_config, "seconds to next update", refresh_card, 
 ts = TimeStamp(plot_config, "readings as of ", timestamp_card)
 ts.update_time(timestamp)
 
-camera_card.children = layout_utils.make_modal(plot_config,stations)
+camera_card.children = layout_utils.make_modal(plot_config, stations)
 
 table = CustomTable(plot_config, "detector metrics summary", table_card)
-table_data=frontend_utils.generate_table_data(df,speed_values,count_values,gap_values)
+table_data = frontend_utils.generate_table_data(df, speed_values, count_values, gap_values)
 table.set_data(table_data)
 
 map_fig, map_data = layout_utils.init_map(df)
@@ -141,7 +140,7 @@ cardheader = layout_utils.make_header("historic data over 24 hrs - use sliders a
                                       plot_config)
 
 scatter = CustomScatter(plot_config)
-slider = CustomSlider()
+slider = CustomSlider(default_range=10, min_gap=5)
 dropdown = CustomDropdown(stations)
 
 primary_values = hist_dict["station 1"]
@@ -182,4 +181,4 @@ elements = {
 callback_utils.init_callbacks(app, elements)
 
 if __name__ == "__main__":
-    app.run_server(debug=True, port=8080, dev_tools_ui=True)
+    app.run_server(debug=True, port=8080, dev_tools_ui=False)

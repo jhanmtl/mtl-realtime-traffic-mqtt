@@ -4,7 +4,6 @@
 *.rdb
 **/cred
 **/__pycache__
-**/placeholders
 **/scripts
 **/scratch
 **/inspections
