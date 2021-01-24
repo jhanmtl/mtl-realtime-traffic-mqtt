@@ -229,7 +229,7 @@ class CustomScatter:
         self.secondary_fig = self._make_fig(windowed_x, windowed_secondary, windowed_label, "comp-color-dark",
                                             "comp-color-bright")
 
-        self.base_fig.data = []
+        self.base_fig.data = None
         self.base_fig.add_trace(self.primary_fig)
         self.base_fig.add_trace(self.secondary_fig)
 
