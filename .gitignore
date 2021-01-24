@@ -3,7 +3,7 @@
 /.idea
 *.rdb
 **/cred
-./**.pyc
+**/__pycache__
 **/placeholders
 **/scripts
 **/scratch
