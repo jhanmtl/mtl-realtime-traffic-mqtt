@@ -1,3 +1,9 @@
+"""
+this is a collection of utility methods to aid in extracting data from incoming mqtt messages and write them to a
+locally running redis server. see ../backend/mqtt_collect.py's description for more details on the overall ideas
+involved
+
+"""
 import pandas as pd
 import random
 from paho.mqtt import client as mqtt_client

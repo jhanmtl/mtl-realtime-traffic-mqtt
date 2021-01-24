@@ -1,3 +1,32 @@
+""" Montreal Realtime Traffic Dashboard
+This project performs realtime IoT data fetching and visualization from 9 thermal and radar sensors embedded along Rue
+Notre-Dame by the City of Montreal for its Open Data initiative. Each sensor publishes traffic data regarding vehicle
+speed, count, and gaptime in 60 second intervals over the mqtt protocol.
+
+This dashboard pulls its data on each sensor from a locally running redis database, onto which a separate python script
+continually records each sensor's new readings at the 60 second intervals that the mqtt message is published by each
+sensor. The update frequency of this dashboard is therefore set to be 600ms longer than
+that to ensure complete updates. A ~1 second interval for visualizing countdown to next update is also present.
+
+Main information conveyed are the current vehicle speed, count, and gaptime at each dectector location. Historic reading
+over 24hrs for each detector is also available in scatter plot form, along with option to compare against a second
+detector and the option for switching between reading types.
+
+A bonus feature, not related to mqtt data, is the ability to access live traffic cam feed at the location
+of the detectors. Note that these camera feeds update at ~5 minute intervals.
+
+As for Dash:
+Certain graphic elements are improved by using dash-bootstrap-components. The staggered layout is implemented with
+nested rows and columns based on bootstrap grids.
+
+Native dash core components for plotting such as Scatter and Bar are reassgined to wrapper classes in
+../src/layout_utils.py to place the plotting and data update logic in one entity. In most cases it makes the callback
+managment for updating the plots much easier. Though whether it is a necessary practice is still tbd.
+
+To run this dashboard, make sure to set ../src on the PYTHONPATH environment variable and launch from temrinal
+with 'python dash-app.py'
+
+"""
 import dash
 import layout_utils
 from dash.dependencies import Input, Output, State
