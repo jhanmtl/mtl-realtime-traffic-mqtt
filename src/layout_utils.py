@@ -199,13 +199,13 @@ class CustomScatter:
     def set_primary_data(self, primary_data):
         x = np.arange(len(primary_data))
         self.primary_data = primary_data
-        self.primary_fig = self._make_fig(x, self.primary_data, self.labels, "barcolor", "capcolor")
+        self.primary_fig = self._make_fig(x, self.primary_data, self.labels, "barcolor", "capcolor","A")
         self.base_fig.add_trace(self.primary_fig)
 
     def set_secondary_data(self, secondary_data):
         x = np.arange(len(secondary_data))
         self.secondary_data = secondary_data
-        self.secondary_fig = self._make_fig(x, self.secondary_data, self.labels, "comp-color-dark", "comp-color-bright")
+        self.secondary_fig = self._make_fig(x, self.secondary_data, self.labels, "comp-color-dark", "comp-color-bright","B")
         self.base_fig.add_trace(self.secondary_fig)
 
     def update_primary_data(self, new_primary_data):
@@ -226,20 +226,28 @@ class CustomScatter:
         windowed_label = self.labels[start:end]
         windowed_x = np.arange(len(windowed_label))
 
-        self.primary_fig = self._make_fig(windowed_x, windowed_primary, windowed_label, "barcolor", "capcolor")
-        self.secondary_fig = self._make_fig(windowed_x, windowed_secondary, windowed_label, "comp-color-dark",
-                                            "comp-color-bright")
+        # self.primary_fig = self._make_fig(windowed_x, windowed_primary, windowed_label, "barcolor", "capcolor")
+        # self.secondary_fig = self._make_fig(windowed_x, windowed_secondary, windowed_label, "comp-color-dark",
+        #                                     "comp-color-bright")
 
-        self.base_fig.data=[]
-        self.base_fig.add_trace(self.primary_fig)
-        self.base_fig.add_trace(self.secondary_fig)
+        self.base_fig.update_traces(selector=dict(name="B"),
+                                    x=windowed_x,
+                                    y=windowed_secondary,
+                                    customdata=windowed_label
+                                    )
+
+        self.base_fig.update_traces(selector=dict(name="A"),
+                                    x=windowed_x,
+                                    y=windowed_primary,
+                                    customdata=windowed_label
+                                    )
 
     def restore(self):
         self.base_fig.data = []
         self.set_primary_data(self.primary_data)
         self.set_secondary_data(self.secondary_data)
 
-    def _make_fig(self, x, y, label, linecolor_key, markercolor_key):
+    def _make_fig(self, x, y, label, linecolor_key, markercolor_key,name=""):
         fig = go.Scatter(
             x=x,
             y=y,
@@ -250,7 +258,7 @@ class CustomScatter:
             textposition='top center',
             customdata=label,
             hovertemplate='Time: %{customdata}<br>Reading: %{y} ' + self.unit,
-            name=""
+            name=name
         )
 
         return fig
