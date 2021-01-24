@@ -129,6 +129,7 @@ html, body {
 #station-camera-dropdown .Select-menu-outer {
     background-color: #303030;
     width: 50%;
+    margin-left: 25%;
     color: white;
     border: 0px !important;
 

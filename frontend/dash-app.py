@@ -181,4 +181,4 @@ elements = {
 callback_utils.init_callbacks(app, elements)
 
 if __name__ == "__main__":
-    app.run_server(debug=False, port=8080, dev_tools_ui=False)
+    app.run_server(debug=True, port=8080, dev_tools_ui=False)
