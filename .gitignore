@@ -2,5 +2,10 @@
 /data/inspections
 /.idea
 *.rdb
-/cred
+**/cred
 ./**.pyc
+**/placeholders
+**/scripts
+**/scratch
+**/inspections
+**/redis

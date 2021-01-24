@@ -5,7 +5,7 @@ import os
 import json
 
 
-def load_detectors():
+def load_detector_data():
     curdir = os.path.dirname(__file__)
     df_path = curdir.replace("src", "data/detectors.csv")
     df = pd.read_csv(df_path)
@@ -28,32 +28,65 @@ def connect_mqtt(broker, port) -> mqtt_client:
 
 
 def on_message(client, userdata, msg):
+    """
+    the callback function that's triggered everytime the client receivees a new mqtt message. see the desc in
+    mqtt_collect.py for the main idea behind aggregating multiple readings of the same time for a given detector.
+
+    :param client:
+    :param userdata (list): custom data passed by user for performing necessary tasks. In this case, userdata is
+    [dict, Redis] where the dict is of the form {det_id1:{reading_type1:[],reading_type2:[]...},det_id2:{}...} and
+    Redis is a Redis instance from redis tha's connected to a server on the local machine
+    :param msg:
+    :return:
+    """
     d = json.loads(msg.payload.decode())
     val = d["Value"]
     now_time = d['CreateUtc']
+
+    # gets the detector id associated with this message
     det_id = extract_detector_id(msg.topic)
+    # gets the reading of this message
     subj = extractor_detection_type(msg.topic)
 
+    # uses the detector id from this message to pull up dict of previous readings associated with this detector.
     detector_values = userdata[0][det_id]
     prev_time = detector_values['CreateUtc']
 
+    # if the timestamp associated with this new reading is different than the previous timestamp, and if this reading
+    # is not the very first reading ever recorded, aggregate the multiple readings already existing into a new reading,
+    # write it to redis,and reset
     if now_time != prev_time and prev_time != 'init-time':
         a_data = parse_aggregated_values(now_time, detector_values, det_id)
         write_db(a_data, userdata[1])
         print(a_data)
-    else:
+    else:  # collect readings of the same time published at the same timestamp
         if subj in detector_values:
             detector_values[subj].append(val)
             detector_values['CreateUtc'] = now_time
 
 
 def initialize_db(db, active_ids, data_template):
+    """
+    checks whether data entries for a specific detecotr already exists. if so, not, initiate an empty dictionary-type
+    value with the detector's id as key in the database. see the data_template variable in mqtt_collect.py for desc
+    of the dictionary structure
+
+    :param db: a Redis() object from redis module
+    :param active_ids (list): list of detector ids
+    :param data_template (dict): a dict with the types of readings to collect as keys and empty lists as values
+    :return:
+    """
     for each_id in active_ids:
         if db.exists(each_id) == 0:
             db.set(each_id, json.dumps(data_template))
 
 
 def initialize_incoming_data(active_ids, value_types):
+    """
+    :param active_ids (list): unique ids of the detectors associated with a mqtt message
+    :param value_types (list): reading_types of the detectors associated with a mqtt message
+    :return incoming_data (dict):
+    """
     incoming_data = {}
     for each_id in active_ids:
         incoming_data[each_id] = {}
@@ -64,6 +97,12 @@ def initialize_incoming_data(active_ids, value_types):
 
 
 def write_db(new_data, db):
+    """
+    writes the aggregated data for each det_id to redis
+    :param new_data:
+    :param db:
+    :return:
+    """
     det_id = new_data['id']
     existing_data = json.loads(db.get(det_id))
     for key in existing_data:
@@ -88,6 +127,14 @@ def extractor_detection_type(topic):
 
 
 def parse_aggregated_values(now_time, detector_values, det_id):
+    """
+    aggregate multiple vehicle-speed, vehicle-count, and vehicle-gap-time readings according to:
+    avg(vehicle-speed), avg(vehicle-gap-time), sum(vehicle-count)
+    :param now_time (list): int
+    :param detector_values (list): int
+    :param det_id: str
+    :return:
+    """
     detector_values['CreateUtc'] = now_time
     aggregate = {}
 
@@ -110,6 +157,7 @@ def parse_aggregated_values(now_time, detector_values, det_id):
     aggregate['time'] = now_time
     aggregate['id'] = det_id
 
+    # reset the list of each reading_type associated with this det_id
     for each_key in detector_values:
         if each_key != 'CreateUtc':
             detector_values[each_key] = []

@@ -107,6 +107,8 @@ html, body {
 }
 
 
+
+
 #drop-0 .Select-control {
     background-color: #303030 !important;
     border: 0px !important;
@@ -116,6 +118,13 @@ html, body {
 #drop-0 .Select-value-label {
     color: white !important;;
 }
+
+#drop-0 .Select-menu-outer {
+    background-color: #303030;
+    width: 50%;
+    border: 0px !important;
+}
+
 
 #station-camera-dropdown .Select-menu-outer {
     background-color: #303030;

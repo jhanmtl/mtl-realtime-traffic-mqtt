@@ -3,7 +3,7 @@ import layout_utils
 from dash.dependencies import Input, Output, State
 
 import frontend_utils
-import callbacks
+import callback_utils
 import pandas as pd
 import json
 from layout_utils import *
@@ -128,7 +128,7 @@ hist_card.children = [cardheader, dropdown.layout, scatter.graph, slider.layout]
 # assign populated layout to app, along with interval components for updating
 app.layout = html.Div([layout, minterval, sinterval])
 
-# current way to pass objects so that they can be used by callback methods in the callbacks.py module
+# current way to pass objects so that they can be used by callback methods in the callback_utils.py module
 # probably a better way exists, to be investigated in future
 elements = {
     "spinner": spinner,
@@ -149,7 +149,7 @@ elements = {
     "streets": streets
 }
 
-callbacks.init_callbacks(app, elements)
+callback_utils.init_callbacks(app, elements)
 
 if __name__ == "__main__":
     app.run_server(debug=True, port=8080, dev_tools_ui=True)
