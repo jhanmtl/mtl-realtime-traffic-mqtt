@@ -1,3 +1,9 @@
+""" Dash Callback Collection
+
+Callbacks that are triggered at 60 second (with the exception of the 1s for the countdown) for refreshing the
+plots of the dashboard with newly written data from the Redis database
+
+"""
 import dash
 import frontend_utils
 import dash_html_components as html
@@ -5,6 +11,13 @@ from dash.dependencies import Input, Output, State
 
 
 def init_callbacks(app, elements):
+    """
+    a way to bring required elements, aside from the app, into this separate doc for performing the updates
+
+    :param app:
+    :param elements:
+    :return:
+    """
     spinner = elements['spinner']
     ts = elements['timestamp']
     slider_config = elements['slider-config']
@@ -25,12 +38,23 @@ def init_callbacks(app, elements):
     @app.callback(Output("pie-graph", "figure"),
                   Input("second-interval", "n_intervals"))
     def update_countdown(n):
+        """
+        animates the countdown spinner
+        :param n:
+        :return:
+        """
         time_elapsed = n % countdown_duration
         time_remaining = countdown_duration - time_elapsed
         spinner.increment(time_elapsed, time_remaining)
         return spinner.fig
 
     def slide_zoom_in(slider_values):
+        """
+        a patch for moving the labels of the RangeSlider with the handles. RangeSlider's native handle behavior is
+        broken atm
+        :param slider_values:
+        :return:
+        """
         [idx_left, idx_right] = slider_values
 
         offset_left = int(100 * (idx_left / n))
@@ -65,6 +89,12 @@ def init_callbacks(app, elements):
          Input('minute-interval', 'n_intervals')]
     )
     def update_slider(slider_values, n_intervals):
+        """
+        animates the handles and handle values of the slider
+        :param slider_values:
+        :param n_intervals:
+        :return:
+        """
         ctx = dash.callback_context
         trigger = ctx.triggered[0]["prop_id"]
         if "interval" in trigger:
@@ -90,6 +120,16 @@ def init_callbacks(app, elements):
          ]
     )
     def update_plots(slider_values, _, selection_1, selection_2, selection_0):
+        """
+        main update logic for all the plots. Triggered either by the 60second interval, or a selection of different
+        detectors and/or reading_type in the historic scatter plot
+        :param slider_values:
+        :param _:
+        :param selection_1:
+        :param selection_2:
+        :param selection_0:
+        :return:
+        """
         ctx = dash.callback_context
         trigger = ctx.triggered[0]["prop_id"]
         zoom_slide_updates = slide_zoom_in(slider_values)
@@ -179,6 +219,17 @@ def init_callbacks(app, elements):
         ]
     )
     def view_traffic_cam(open_btn, close_btn, go_prev, go_next, selection, is_open):
+        """
+        callbacks to open a modal element for viewing the traffic cam of the selected detector, and then handles
+        the carousel behavior within the modal element
+        :param open_btn:
+        :param close_btn:
+        :param go_prev:
+        :param go_next:
+        :param selection:
+        :param is_open:
+        :return:
+        """
         ctx = dash.callback_context
         trigger = ctx.triggered[0]["prop_id"]
 

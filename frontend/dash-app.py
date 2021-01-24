@@ -1,7 +1,9 @@
 """ Montreal Realtime Traffic Dashboard
 This project performs realtime IoT data fetching and visualization from 9 thermal and radar sensors embedded along Rue
-Notre-Dame by the City of Montreal for its Open Data initiative. Each sensor publishes traffic data regarding vehicle
-speed, count, and gaptime in 60 second intervals over the mqtt protocol.
+Notre-Dame by the City of Montreal for its Open Data initiative. Data details here
+(https://donnees.montreal.ca/ville-de-montreal/circulation-mobilite-temps-reel).
+Each sensor publishes traffic data regarding vehicle speed, count, and gaptime in 60 second intervals over the mqtt
+protocol.
 
 This dashboard pulls its data on each sensor from a locally running redis database, onto which a separate python script
 continually records each sensor's new readings at the 60 second intervals that the mqtt message is published by each
@@ -55,7 +57,6 @@ with open("./assets/slider_config.json", "r") as jfile:
 
 with open("./assets/desc.txt", "r") as tfile:
     desc = tfile.readlines()[0]
-
 
 # dash intervals for countdown spinner (1s interval) and update plots with new data from redis (60s interval)
 minterval = dcc.Interval(

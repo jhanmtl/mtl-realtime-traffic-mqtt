@@ -1,3 +1,10 @@
+""" Frontend Utility Class and Methods
+The RedisDB class below is a wrapper classes around native Redis component from redis for conveniently accessing
+elements over a specified range.
+
+The methods exist to perform simple data processing
+
+"""
 import json
 import redis
 import pytz
@@ -5,8 +12,9 @@ import datetime
 import numpy as np
 import pandas as pd
 
-def generate_table_data(df, speed_values,count_values,gap_values):
-    stations=['station {}'.format(i) for i in range(len(speed_values))]
+
+def generate_table_data(df, speed_values, count_values, gap_values):
+    stations = ['station {}'.format(i) for i in range(len(speed_values))]
     table_data = {
         "station": (np.arange(len(stations)) + 1).tolist(),
         "speed (kmh)": speed_values,
@@ -18,6 +26,7 @@ def generate_table_data(df, speed_values,count_values,gap_values):
     table_data["corner"] = df["corner_st2"]
     table_data = table_data[["station", "corner", "speed (kmh)", "count (cars)", "gap time (s)"]]
     return table_data
+
 
 def date_convert(utc_time_str, target_tz="America/New_York"):
     [date, time] = utc_time_str.split("T")
@@ -41,6 +50,13 @@ def date_convert(utc_time_str, target_tz="America/New_York"):
 
 class RedisDB:
     def __init__(self, host="localhost", port=6379, dbid=0):
+        """
+        wrapper class around the Redis component of native redis to facilitate extracting the last readings of every
+        detector and the last n readings of every detector
+        :param host:
+        :param port:
+        :param dbid:
+        """
         self.db = redis.Redis(host=host, port=port, db=dbid)
         self.keys = [k.decode() for k in self.db.keys()]
         self.keys.sort()
@@ -73,13 +89,3 @@ class RedisDB:
             values.append(subreadings)
 
         return values
-
-    def get_earliest_timestamp(self):
-        self._update()
-        k=self.keys[0]
-        ts=self.readings[k]['time'][0]
-        return ts
-
-
-
-

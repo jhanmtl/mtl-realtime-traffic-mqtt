@@ -1,3 +1,12 @@
+"""Layout Utility Classes and Methods
+
+The classes below are mostly wrapper classes around native components of Dash such as Scatter, Bar, RangeSlider,
+and Dropdown. These wrapper classes seek to integrate display and live update logic in a single entity to facilitate
+callbacks for updaing the data displayed.
+
+The methods exist to simply return layouts of elements with less complicated update logic.
+
+"""
 import numpy as np
 import dash_table
 import plotly.graph_objects as go
@@ -12,9 +21,15 @@ import frontend_utils
 
 class CustomTable:
     def __init__(self, config, card_title, target_card):
+        """
+        wrapper class for dash's DataTable component. Integrates display and update logic
+        :param config (dict): key-value parameters to control plot appearance. see example in ./assets/bar_config.json
+        :param card_title (str): title of the card that contains this table
+        :param target_card (Card): dash-bootstrap-component Card that  this table appears on
+        """
         self.config = config
         self.card = target_card
-        self.cardheader = make_header(card_title,config)
+        self.cardheader = make_header(card_title, config)
         self.table = None
         self.table_div = html.Div(id="table-div")
         self.df = None
@@ -45,6 +60,11 @@ class CustomTable:
 
 class CustomDropdown:
     def __init__(self, options):
+        """
+        wrapper class for the dash's Dropdown component. Constructs a 3-dropdown group for choosing two detectors and
+        a reading type. Integrates display and update logic
+        :param options (list): a list of strings for the options of the dropdown selection
+        """
         self.options = options
 
         self.dropdown0 = dcc.Dropdown(
@@ -78,6 +98,13 @@ class CustomDropdown:
 
 class CustomSlider:
     def __init__(self, default_range=120, min_gap=60, cid="cust-slider"):
+        """
+        wrapper class for the dash's RangeSlider component. Patches issue of slider labels not moving with the handle.
+        Integrates display and update logic.
+        :param default_range (int): distance between the left and right handle, with right handle at the right end
+        :param min_gap (int): minimum distance to preserve between left and right handles
+        :param cid (str): unique id associated with the underlying html element of the slider
+        """
         self.default_range = default_range
         self.min_gap = min_gap
         self.id = cid
@@ -112,6 +139,12 @@ class CustomSlider:
 
 class CustomScatter:
     def __init__(self, config):
+        """
+        wrapper class for dash's Scatter component. Displays time series data over a time range  controlled by the
+        CustomSlider component for two detectors and their reading types specified by the CustomDropdown component.
+        Integrates display and update logic
+        :param config (dict): key-value parameters to control plot appearance. see example in ./assets/bar_config.json
+        """
         self.config = config
 
         self.unit = None
@@ -225,9 +258,16 @@ class CustomScatter:
 
 class CustomBar:
     def __init__(self, config, card_title, target_card, graph_id):
+        """
+        wrapper class for dash's Bar component. Integrates display and update logic
+        :param config (dict): key-value parameters to control plot appearance. see example in ./assets/bar_config.json
+        :param card_title (str): title of the card that contains this table
+        :param target_card (Card): dash-bootstrap-component Card that  this table appears on
+        :param graph_id (str): unique id associated with the underlying html element that the plot appears on
+        """
         self.config = config
         self.card = target_card
-        self.cardheader = make_header(card_title,config)
+        self.cardheader = make_header(card_title, config)
         self.graph = dcc.Graph(className="graphs", id=graph_id)
         self.card.children = [self.cardheader, self.graph]
         self.fig = None
@@ -277,9 +317,17 @@ class CustomBar:
 
 class CountdownSpinner:
     def __init__(self, config, card_title, target_card, graph_id):
+        """
+        repurposes dash's Pie chart (Donut version) as a spinner for marking the countdown until next refresh.
+        Integrates display and update logic
+        :param config (dict): key-value parameters to control plot appearance. see example in ./assets/bar_config.json
+        :param card_title (str): title of the card that contains this table
+        :param target_card (Card): dash-bootstrap-component Card that  this table appears on
+        :param graph_id (str): unique id associated with the underlying html element that the plot appears on
+        """
         self.config = config
         self.card = target_card
-        self.cardheader = make_header(card_title,config)
+        self.cardheader = make_header(card_title, config)
         self.fig = px.pie(values=[30, 30],
                           color_discrete_sequence=[self.config["capcolor"], self.config["barcolor"]]
                           )
@@ -317,9 +365,15 @@ class CountdownSpinner:
 
 class TimeStamp:
     def __init__(self, config, card_title, target_card):
+        """
+        simple wrapper class for displaying the timestamp of the last reading
+        :param config (dict): key-value parameters to control plot appearance. see example in ./assets/bar_config.json
+        :param card_title (str): title of the card that contains this table
+        :param target_card (Card): dash-bootstrap-component Card that  this table appears on
+        """
         self.config = config
         self.card = target_card
-        self.cardheader = make_header(card_title,config)
+        self.cardheader = make_header(card_title, config)
         self.stamp = ""
         self.text = html.H4(children=self.stamp, id="timestamp-text", style={"textAlign": "center", "height": "100%"})
         self.card.children = [self.cardheader, html.Div(self.text, style={"margin": "auto"})]
@@ -332,6 +386,11 @@ class TimeStamp:
 
 class LeftColumn:
     def __init__(self):
+        """
+        utility class for grouping the layout elements of the 'left' panel portion of the dashboard which includes
+        the summary table, speed barplot, count barplot, and gaptime barplot. Also offers option of locating
+        individual elements in layout by their unique ids
+        """
         aux_panel = dbc.Row(card(), className="top-left-pane", id="aux")
         speed_panel = dbc.Row(card(), className="speed-plot", id="vspeed")
         count_panel = dbc.Row(card(), className="count-plot", id="vcount")
@@ -352,6 +411,11 @@ class LeftColumn:
 
 class RightColumn:
     def __init__(self):
+        """
+        utility class for grouping the layout elements of the 'right' panel portion of the dashboard which includes
+        the title, map, camera access, countdown spinner, timestamp, and historic scatter. Also offers option of
+        locating individual elements in layout by their unique ids
+        """
         title = TitlePane()
         stat2 = dbc.Col(dbc.Row(card(), className="wrap-div"), className="stat-col", id="stat-2", style={"padding": 0},
                         width=8)
@@ -397,6 +461,9 @@ class RightColumn:
 
 class MapPane:
     def __init__(self):
+        """
+        utility class for grouping the layout elements of the map portion of the dashboard
+        """
         self.layout = dbc.Col(dcc.Graph(id="scatter_map", className="graphs"), className="map-col", id="map-pane")
 
     def get_layout(self):
@@ -405,6 +472,9 @@ class MapPane:
 
 class HistoricPlot:
     def __init__(self):
+        """
+        utility class for grouping the layout elements of the historic scatter plot portion of the dashboard
+        """
         self.layout = dbc.Row(card(), className="historic-plot", id="hist-pane")
 
     def get_layout(self):
@@ -412,6 +482,10 @@ class HistoricPlot:
 
 
 class TitlePane:
+    """
+    utility class for grouping the layout elements of the title the dashboard
+    """
+
     def __init__(self):
         self.layout = dbc.Row(card(), className="title-row", id="title-pane")
 
@@ -518,7 +592,6 @@ def make_title():
 
 
 def make_modal(plot_config, stations):
-
     camera_header = dbc.CardHeader("camera access", style={"textAlign": "center",
                                                            "padding": "0px",
                                                            "border": "0px",
@@ -531,7 +604,7 @@ def make_modal(plot_config, stations):
          "Select to view feed of traffic cameras located at detector locations.",
          ],
         style={"margin": "16px", "textAlign": "justify", "color": "#7a7a7a"}
-        )
+    )
     btn = dbc.Button("view traffic cam", id="open-modal", style={"marginTop": "16px"})
 
     modal = dbc.Modal(
@@ -586,8 +659,8 @@ def make_modal(plot_config, stations):
 
     return modal_layout
 
-def init_scatter(scatter,slider,dropdown,db,n,stations,config):
 
+def init_scatter(scatter, slider, dropdown, db, n, stations, config):
     hist_data = db.n_latest_readings("vehicle-speed", n)
     n = len(hist_data[0])
 
@@ -612,12 +685,11 @@ def init_scatter(scatter,slider,dropdown,db,n,stations,config):
     return [cardheader, dropdown.layout, scatter.graph, slider.layout]
 
 
-
-def make_header(text,config):
+def make_header(text, config):
     return dbc.CardHeader(text,
-                   style={"textAlign": "center",
-                          "padding": "0px",
-                          "border": "0px",
-                          "color": config['textcolor'],
-                          "borderRadius": "0px"
-                          })
+                          style={"textAlign": "center",
+                                 "padding": "0px",
+                                 "border": "0px",
+                                 "color": config['textcolor'],
+                                 "borderRadius": "0px"
+                                 })

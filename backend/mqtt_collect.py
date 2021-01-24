@@ -26,6 +26,8 @@ the det_id/readinding_type, and reset the CreatedUtc list to a single element th
 
 Corresponding methods for performing the above tasks are identified below and also in ../src/backend_utils.py
 
+To run this script, make sure to first set ../src on the PYTHONPATH environment variable then have a
+locally running redis server and launch from temrinal with 'python mqtt-collect.py'
 """
 import backend_utils
 import redis
