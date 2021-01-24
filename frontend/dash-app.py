@@ -140,7 +140,7 @@ cardheader = layout_utils.make_header("historic data over 24 hrs - use sliders a
                                       plot_config)
 
 scatter = CustomScatter(plot_config)
-slider = CustomSlider(default_range=10, min_gap=5)
+slider = CustomSlider()
 dropdown = CustomDropdown(stations)
 
 primary_values = hist_dict["station 1"]
