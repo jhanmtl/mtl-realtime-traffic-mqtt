@@ -40,7 +40,7 @@ import json
 from layout_utils import *
 
 # configs and parameters
-n = 180
+n = 1000
 countdown_duration = 60
 m_freq = 60600
 s_freq = 1010
@@ -140,7 +140,7 @@ cardheader = layout_utils.make_header("historic data over 24 hrs - use sliders a
                                       plot_config)
 
 scatter = CustomScatter(plot_config)
-slider = CustomSlider(default_range=60,min_gap=10)
+slider = CustomSlider()
 dropdown = CustomDropdown(stations)
 
 primary_values = hist_dict["station 1"]
