@@ -123,8 +123,7 @@ class CustomSlider:
                                       max=x[-1],
                                       value=[x[-1] - self.default_range + 1, x[-1]],
                                       step=1,
-                                      pushable=self.min_gap,
-                                      updatemode="drag"
+                                      pushable=self.min_gap
                                       )
 
         self.handle_left = html.Div(children="val", id="left-marker")
