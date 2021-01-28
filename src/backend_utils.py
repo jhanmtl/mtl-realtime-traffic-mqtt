@@ -116,8 +116,8 @@ def write_db(new_data, db):
         # probably a better data structure than poping a list at idx 0.
         # but small enough to not impact performance. maybe future improve
         datalen=len(existing_data[key])
-        if datalen > 1600:
-            existing_data[key]=existing_data[key][datalen-1:datalen-1-1440]
+        if datalen > 1440:
+            existing_data[key]=existing_data[key][datalen-1,datalen-1-1440]
         existing_data[key].append(new_data[key])
     db.set(det_id, json.dumps(existing_data))
 
