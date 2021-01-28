@@ -173,13 +173,20 @@ class CustomScatter:
             font_color="#7a7a7a"
         )
 
-        self.primary_data = None
-        self.secondary_data = None
+        self.primary_fig = self._make_fig("barcolor", "capcolor")
+        self.secondary_fig = self._make_fig("comp-color-dark", "comp-color-bright")
 
-        self.primary_fig = None
-        self.secondary_fig = None
+        self.base_fig.add_trace(self.primary_fig)
+        self.base_fig.add_trace(self.secondary_fig)
 
         self.graph.figure = self.base_fig
+
+        self.primary_data = None
+        self.secondary_data = None
+        self.x = None
+
+        self.start = None
+        self.end = None
 
     def set_unit(self, unit):
         self.unit = unit
@@ -196,69 +203,59 @@ class CustomScatter:
     def set_labels(self, labels):
         self.labels = labels
 
-    def set_primary_data(self, primary_data):
-        x = np.arange(len(primary_data))
-        self.primary_data = primary_data
-        self.primary_fig = self._make_fig(x, self.primary_data, self.labels, "barcolor", "capcolor","A")
-        self.base_fig.add_trace(self.primary_fig)
+    def update_primary_fig(self, data):
+        self.primary_data = data
+        self.x = np.arange(len(data))
 
-    def set_secondary_data(self, secondary_data):
-        x = np.arange(len(secondary_data))
-        self.secondary_data = secondary_data
-        self.secondary_fig = self._make_fig(x, self.secondary_data, self.labels, "comp-color-dark", "comp-color-bright","B")
-        self.base_fig.add_trace(self.secondary_fig)
+        self.base_fig.update_traces(selector=dict(marker_color="#00a99d"),
+                                    x=self.x,
+                                    y=self.primary_data,
+                                    customdata=self.labels,
+                                    hovertemplate = 'Time: %{customdata}<br>Reading: %{y} ' + self.unit,
 
-    def update_primary_data(self, new_primary_data):
-        self.primary_data = new_primary_data
-        self.base_fig.data = self.base_fig.data[:1]
-        self.set_primary_data(self.primary_data)
+        )
 
-    def update_secondary_data(self, new_secondary_data):
-        self.secondary_data = new_secondary_data
-        self.base_fig.data = self.base_fig.data[1:]
-        self.set_secondary_data(self.secondary_data)
+    def update_secondary_fig(self, data):
+        self.secondary_data = data
+        self.base_fig.update_traces(selector=dict(marker_color="#DEA916"),
+                                    x=self.x,
+                                    y=self.secondary_data,
+                                    customdata=self.labels,
+                                    hovertemplate='Time: %{customdata}<br>Reading: %{y} ' + self.unit,
+                                    )
 
     def zoom_in(self, start, end):
         end += 1
         end = min(end, len(self.primary_data))
+
+        self.start = start
+        self.end = end
+
         windowed_primary = self.primary_data[start:end]
         windowed_secondary = self.secondary_data[start:end]
         windowed_label = self.labels[start:end]
         windowed_x = np.arange(len(windowed_label))
 
-        # self.primary_fig = self._make_fig(windowed_x, windowed_primary, windowed_label, "barcolor", "capcolor")
-        # self.secondary_fig = self._make_fig(windowed_x, windowed_secondary, windowed_label, "comp-color-dark",
-        #                                     "comp-color-bright")
-
-        self.base_fig.update_traces(selector=dict(name="B"),
-                                    x=windowed_x,
-                                    y=windowed_secondary,
-                                    customdata=windowed_label
-                                    )
-
-        self.base_fig.update_traces(selector=dict(name="A"),
+        self.base_fig.update_traces(selector=dict(marker_color="#00a99d"),
                                     x=windowed_x,
                                     y=windowed_primary,
                                     customdata=windowed_label
                                     )
 
-    def restore(self):
-        self.base_fig.data = []
-        self.set_primary_data(self.primary_data)
-        self.set_secondary_data(self.secondary_data)
+        self.base_fig.update_traces(selector=dict(marker_color="#DEA916"),
+                                    x=windowed_x,
+                                    y=windowed_secondary,
+                                    customdata=windowed_label
+                                    )
 
-    def _make_fig(self, x, y, label, linecolor_key, markercolor_key,name=""):
+    def _make_fig(self, linecolor_key, markercolor_key):
         fig = go.Scatter(
-            x=x,
-            y=y,
             textfont_color=self.config["textcolor"],
             mode="lines+markers+text",
             line=dict(color=self.config[linecolor_key]),
             marker=dict(color=self.config[markercolor_key]),
             textposition='top center',
-            customdata=label,
-            hovertemplate='Time: %{customdata}<br>Reading: %{y} ' + self.unit,
-            name=name
+            name=""
         )
 
         return fig

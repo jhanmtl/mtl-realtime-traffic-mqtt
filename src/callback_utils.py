@@ -48,17 +48,57 @@ def init_callbacks(app, elements):
         spinner.increment(time_elapsed, time_remaining)
         return spinner.fig
 
-    def slide_zoom_in(slider_values):
+    # def slide_zoom_in(slider_values):
+    #     """
+    #     a patch for moving the labels of the RangeSlider with the handles. RangeSlider's native handle behavior is
+    #     broken atm
+    #     :param slider_values:
+    #     :return:
+    #     """
+    #     [idx_left, idx_right] = slider_values
+    #     print(slider_values)
+    #
+    #     offset_left = int(100 * (idx_left / n))
+    #     offset_right = int(100 * (idx_right / n))
+    #
+    #     style_left = {"marginLeft": "{}%".format(offset_left), "marginTop": "0px"}
+    #     style_left.update(slider_config)
+    #
+    #     style_right = {"marginLeft": "{}%".format(offset_right), "marginTop": "27px"}
+    #     style_right.update(slider_config)
+    #
+    #     text_left = slider.labels[idx_left]
+    #     text_right = slider.labels[idx_right]
+    #
+    #     text_left = frontend_utils.date_convert(text_left)
+    #     text_right = frontend_utils.date_convert(text_right)
+    #
+    #     text_left = text_left.strftime("%m/%d - %H:%M")
+    #     text_right = text_right.strftime("%m/%d - %H:%M")
+    #
+    #     scatter.zoom_in(idx_left, idx_right)
+    #
+    #     return [scatter.base_fig, idx_left, idx_right, style_left, text_left, style_right,
+    #             text_right]
+    #
+    @app.callback(
+        [Output("left-marker", "style"),
+         Output("left-marker", "children"),
+         Output("right-marker", "style"),
+         Output("right-marker", "children")],
+          Input('cust-slider', 'value'),
+    )
+    def update_slider(slider_values):
         """
-        a patch for moving the labels of the RangeSlider with the handles. RangeSlider's native handle behavior is
-        broken atm
+        animates the handles and handle values of the slider
         :param slider_values:
+        :param n_intervals:
         :return:
         """
-        [idx_left, idx_right] = slider_values
 
+        [idx_left, idx_right] = slider_values
         offset_left = int(100 * (idx_left / n))
-        offset_right = int(100 * (idx_right / n)) - 8
+        offset_right = int(100 * (idx_right / n))-8
 
         style_left = {"marginLeft": "{}%".format(offset_left), "marginTop": "0px"}
         style_left.update(slider_config)
@@ -75,34 +115,8 @@ def init_callbacks(app, elements):
         text_left = text_left.strftime("%m/%d - %H:%M")
         text_right = text_right.strftime("%m/%d - %H:%M")
 
-        scatter.zoom_in(idx_left, idx_right)
 
-        return [scatter.base_fig, idx_left, idx_right, style_left, text_left, style_right,
-                text_right]
-
-    @app.callback(
-        [Output("left-marker", "style"),
-         Output("left-marker", "children"),
-         Output("right-marker", "style"),
-         Output("right-marker", "children")],
-        [Input('cust-slider', 'value'),
-         Input('minute-interval', 'n_intervals')]
-    )
-    def update_slider(slider_values, n_intervals):
-        """
-        animates the handles and handle values of the slider
-        :param slider_values:
-        :param n_intervals:
-        :return:
-        """
-        ctx = dash.callback_context
-        trigger = ctx.triggered[0]["prop_id"]
-        if "interval" in trigger:
-            new_hist_utc = db.n_latest_readings("time", n)[0]
-            slider.set_labels(new_hist_utc)
-
-        zoom_slide_updates = slide_zoom_in(slider_values)
-        return zoom_slide_updates[3:]
+        return style_left, text_left, style_right,text_right
 
     @app.callback(
         [Output("hist-plot", "figure"),
@@ -117,9 +131,12 @@ def init_callbacks(app, elements):
          Input("drop-1", "value"),
          Input("drop-2", "value"),
          Input("drop-0", "value")
-         ]
+         ],
+        [
+         State("cust-slider","value")
+        ]
     )
-    def update_plots(slider_values, _, selection_1, selection_2, selection_0):
+    def update_plots(slider_values, _, selection_1, selection_2, selection_0, slider_value):
         """
         main update logic for all the plots. Triggered either by the 60second interval, or a selection of different
         detectors and/or reading_type in the historic scatter plot
@@ -132,7 +149,6 @@ def init_callbacks(app, elements):
         """
         ctx = dash.callback_context
         trigger = ctx.triggered[0]["prop_id"]
-        zoom_slide_updates = slide_zoom_in(slider_values)
 
         if selection_0 == "speed":
             datatype = "vehicle-speed"
@@ -146,7 +162,7 @@ def init_callbacks(app, elements):
 
         if "drop" in trigger:
 
-            new_times_utc = db.n_latest_readings("time", n + 1)[0]
+            new_times_utc = db.n_latest_readings("time", n)[0]
 
             new_data = db.n_latest_readings(datatype, n + 1)
             new_timestamp = new_times_utc[-1]
@@ -163,12 +179,20 @@ def init_callbacks(app, elements):
             new_primary_values = new_hist_dict[selection_1]
             new_secondary_values = new_hist_dict[selection_2]
 
-            scatter.update_primary_data(new_primary_values)
-            scatter.update_secondary_data(new_secondary_values)
-            scatter.set_labels(new_times_utc)
             scatter.set_unit(unit)
+            scatter.set_labels(new_times_utc)
 
-            scatter.zoom_in(zoom_slide_updates[1], zoom_slide_updates[2])
+            scatter.update_primary_fig(new_primary_values)
+            scatter.update_secondary_fig(new_secondary_values)
+
+            new_start=scatter.start+1
+            new_end=scatter.end+1
+
+
+            slider.set_labels(new_times_utc)
+
+            scatter.zoom_in(new_start,new_end)
+
 
         if "interval" in trigger:
             new_times_utc = db.n_latest_readings("time", n)[0]
@@ -186,12 +210,24 @@ def init_callbacks(app, elements):
             new_primary_values = new_hist_dict[selection_1]
             new_secondary_values = new_hist_dict[selection_2]
 
-            scatter.update_primary_data(new_primary_values)
-            scatter.update_secondary_data(new_secondary_values)
-            scatter.set_labels(new_times_utc)
             scatter.set_unit(unit)
+            scatter.set_labels(new_times_utc)
 
-            scatter.zoom_in(zoom_slide_updates[1], zoom_slide_updates[2])
+            slider.set_labels(new_times_utc)
+
+            scatter.update_primary_fig(new_primary_values)
+            scatter.update_secondary_fig(new_secondary_values)
+
+            if len(new_times_utc) > len(slider.labels):
+                new_start = scatter.start + 1
+                new_end = scatter.end + 1
+            else:
+                new_start = scatter.start
+                new_end = scatter.end
+
+            slider.set_labels(new_times_utc)
+            scatter.zoom_in(new_start, new_end)
+
 
             ts.update_time(new_times_utc[-1])
 
@@ -200,6 +236,9 @@ def init_callbacks(app, elements):
             table.df["gap time (s)"] = new_gap_values
 
             table.refresh()
+
+        if "slider" in trigger:
+            scatter.zoom_in(slider_value[0]+1, slider_value[1]+1)
 
         return [scatter.base_fig, speedbar.fig, countbar.fig, gapbar.fig, ts.stamp, table.table]
 

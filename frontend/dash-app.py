@@ -41,8 +41,9 @@ from layout_utils import *
 
 # configs and parameters
 n = 1000
-countdown_duration = 60
-m_freq = 60600
+
+countdown_duration = 10
+m_freq = 10100
 s_freq = 1010
 cam_link = "http://www1.ville.montreal.qc.ca/Circulation-Cameras/GEN{}.jpeg"
 
@@ -90,6 +91,12 @@ timestamp = db.latest_readings("time")[0]
 hist_data = db.n_latest_readings("vehicle-speed", n)
 hist_utc = db.n_latest_readings("time", n)[0]
 hist_dict = {s: l for s, l in zip(stations, hist_data)}
+
+n=len(hist_utc)
+
+drange=int(0.2*len(hist_utc))
+mingap=int(0.1*len(hist_utc))
+
 
 # create app
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.DARKLY], title="mqtt-real", update_title=None)
@@ -140,25 +147,32 @@ cardheader = layout_utils.make_header("historic data over 24 hrs - use sliders a
                                       plot_config)
 
 scatter = CustomScatter(plot_config)
-slider = CustomSlider()
+slider = CustomSlider(default_range=drange, min_gap=mingap)
 dropdown = CustomDropdown(stations)
 
 primary_values = hist_dict["station 1"]
 secondary_values = hist_dict["station 2"]
 
+zoom_end = len(primary_values)
+zoom_start = max(zoom_end - drange, 0)
+
 scatter.set_unit("kmh")
 scatter.set_labels(hist_utc)
-scatter.set_primary_data(primary_values)
-scatter.set_secondary_data(secondary_values)
+
+scatter.update_primary_fig(primary_values)
+scatter.update_secondary_fig(secondary_values)
+scatter.zoom_in(zoom_start,zoom_end)
+
 slider.set_labels(hist_utc)
 
-hist_card.children = [cardheader, dropdown.layout, scatter.graph, slider.layout]
+hist_card.children = [cardheader, dropdown.layout, slider.layout, scatter.graph]
 
 # assign populated layout to app, along with interval components for updating
 app.layout = html.Div([layout, minterval, sinterval])
 
 # current way to pass objects so that they can be used by callback methods in the callback_utils.py module
 # probably a better way exists, to be investigated in future
+
 elements = {
     "spinner": spinner,
     "timestamp": ts,
@@ -181,4 +195,6 @@ elements = {
 callback_utils.init_callbacks(app, elements)
 
 if __name__ == "__main__":
-    app.run_server(debug=True, port=8080, dev_tools_ui=True)
+    app.run_server(debug=True,
+                   port=8080,
+                   dev_tools_ui=True)

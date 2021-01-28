@@ -46,16 +46,17 @@ def publish(client, topics):
                 msg = generate_msg("Vehicle-average-gap-time", "1/10sec", val)
 
             print(msg)
+            print(t)
             msg=json.dumps(msg)
             client.publish(t, msg)
 
-        time.sleep(5)
+        time.sleep(10)
 
 
 def main():
     # ================== setting up the topics =====================
-    df = backend_utils.read_csv("detectors-ids-unpacked.csv")
-    ids = df['topic'].values.tolist()
+    df = backend_utils.read_csv("detectors-simulated.csv")
+    ids = df['topics'].values.tolist()
     value_types = ["vehicle-gap-time", "vehicle-count", "vehicle-speed"]
     topics = []
     for each_id in ids:
