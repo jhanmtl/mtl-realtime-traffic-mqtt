@@ -31,6 +31,7 @@ with 'python dash-app.py'
 """
 import dash
 import layout_utils
+import argparse
 from dash.dependencies import Input, Output, State
 
 import frontend_utils
@@ -42,9 +43,11 @@ from layout_utils import *
 # configs and parameters
 n = 1000
 
-countdown_duration = 10
-m_freq = 10100
+countdown_duration = 5
+# m_freq = 15150
+m_freq=5050
 s_freq = 1010
+
 cam_link = "http://www1.ville.montreal.qc.ca/Circulation-Cameras/GEN{}.jpeg"
 
 with open("./assets/bar_config.json", "r") as jfile:
@@ -94,7 +97,7 @@ hist_dict = {s: l for s, l in zip(stations, hist_data)}
 
 n=len(hist_utc)
 
-drange=int(0.2*len(hist_utc))
+drange=int(0.1*len(hist_utc))
 mingap=int(0.1*len(hist_utc))
 
 
@@ -194,7 +197,25 @@ elements = {
 
 callback_utils.init_callbacks(app, elements)
 
+
+def main():
+    parser=argparse.ArgumentParser()
+    parser.add_argument("--debug",action="store_true")
+    parser.add_argument("-p")
+    parser.add_argument("--host")
+    args= parser.parse_args()
+
+    debug=args.debug
+    port=int(args.p)
+    host=args.host
+
+    app.run_server(
+        debug=debug,
+        port=port,
+        dev_tools_ui=debug,
+        host=host
+    )
+
+
 if __name__ == "__main__":
-    app.run_server(debug=True,
-                   port=8080,
-                   dev_tools_ui=True)
+    main()

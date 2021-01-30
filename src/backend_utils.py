@@ -9,6 +9,9 @@ import random
 from paho.mqtt import client as mqtt_client
 import os
 import json
+import numpy as np
+from scipy.interpolate import interp1d
+
 
 def connect_mqtt(broker, port) -> mqtt_client:
     def on_connect(client, userdata, flags, rc):
@@ -44,24 +47,20 @@ def on_message(client, userdata, msg):
     time = value_dict['CreateUtc']
     subj = extractor_detection_type(msg.topic)
 
-    maxsize=6000
-    minsize=2880
-
-
+    maxsize = 6000
+    minsize = 5760
 
     existing_data = json.loads(userdata.get(det_id))
-    existing_sizes=[len(existing_data[k]) for k in existing_data]
-    if min(existing_sizes)==maxsize:
+    existing_sizes = [len(existing_data[k]) for k in existing_data]
+    if min(existing_sizes) == maxsize:
         for k in existing_data:
-            existing_data[k]=existing_data[k][(len(existing_data[k])-minsize+1):]
+            existing_data[k] = existing_data[k][(len(existing_data[k]) - minsize + 1):]
 
     existing_data[subj].append(reading)
     if time not in existing_data['time']:
         existing_data['time'].append(time)
 
-
-
-    print("{:<6}  {:<4}  {:<20}  {:<16}".format(det_id,reading,time,subj))
+    print("{:<6}  {:<4}  {:<20}  {:<16}".format(det_id, reading, time, subj))
 
     userdata.set(det_id, json.dumps(existing_data))
 
@@ -99,3 +98,33 @@ def read_csv(fname):
     datadir = os.path.join(basedir, "data")
     df = pd.read_csv(datadir + "/{}".format(fname), dtype={'id': str})
     return df
+
+
+class BimodalSim:
+    def __init__(self, df, inverse=False):
+        self.df = df
+        x = df['time']
+        y = df['value']
+        y = y / np.max(y)
+        if inverse:
+            y = 1 / y
+
+        self.base_min = np.min(y)
+        self.base_max = np.max(y)
+        self.target_min=None
+        self.target_max=None
+        self.noise_scale=None
+
+        self.f = interp1d(x, y, kind='cubic')
+
+    def set_params(self, target_min, target_max, noise_scale):
+        self.target_min = target_min
+        self.target_max = target_max
+        self.noise_scale = noise_scale
+
+    def generate(self, x):
+        val = self.f(x).flatten().item()
+        noise = np.random.randint(0.0, int(self.noise_scale*self.target_max)+1)
+        val *= noise
+        val = max(val, self.target_min)
+        return int(val)

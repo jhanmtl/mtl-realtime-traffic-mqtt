@@ -48,39 +48,105 @@ def init_callbacks(app, elements):
         spinner.increment(time_elapsed, time_remaining)
         return spinner.fig
 
-    # def slide_zoom_in(slider_values):
-    #     """
-    #     a patch for moving the labels of the RangeSlider with the handles. RangeSlider's native handle behavior is
-    #     broken atm
-    #     :param slider_values:
-    #     :return:
-    #     """
-    #     [idx_left, idx_right] = slider_values
-    #     print(slider_values)
-    #
-    #     offset_left = int(100 * (idx_left / n))
-    #     offset_right = int(100 * (idx_right / n))
-    #
-    #     style_left = {"marginLeft": "{}%".format(offset_left), "marginTop": "0px"}
-    #     style_left.update(slider_config)
-    #
-    #     style_right = {"marginLeft": "{}%".format(offset_right), "marginTop": "27px"}
-    #     style_right.update(slider_config)
-    #
-    #     text_left = slider.labels[idx_left]
-    #     text_right = slider.labels[idx_right]
-    #
-    #     text_left = frontend_utils.date_convert(text_left)
-    #     text_right = frontend_utils.date_convert(text_right)
-    #
-    #     text_left = text_left.strftime("%m/%d - %H:%M")
-    #     text_right = text_right.strftime("%m/%d - %H:%M")
-    #
-    #     scatter.zoom_in(idx_left, idx_right)
-    #
-    #     return [scatter.base_fig, idx_left, idx_right, style_left, text_left, style_right,
-    #             text_right]
-    #
+
+    @app.callback(
+        [Output('speed-live-graph', "figure"),
+         Output('count-live-graph', "figure"),
+         Output("gap-live-graph", "figure"),
+         Output("table-div", "children")
+         ],
+        Input("minute-interval", "n_intervals")
+    )
+    def update_barplots_and_table(_):
+        new_speed_values = db.latest_readings("vehicle-speed")
+        new_count_values = db.latest_readings("vehicle-count")
+        new_gap_values = db.latest_readings("vehicle-gap-time")
+
+        speedbar.set_data(new_speed_values, stations, "kmh")
+        countbar.set_data(new_count_values, stations, "cars")
+        gapbar.set_data(new_gap_values, stations, "s")
+
+        table.df["speed (kmh)"] = new_speed_values
+        table.df["count (cars)"] = new_count_values
+        table.df["gap time (s)"] = new_gap_values
+
+        table.refresh()
+
+        return speedbar.fig, countbar.fig, gapbar.fig, table.table
+
+    @app.callback(
+        Output("timestamp-text", "children"),
+        Input("minute-interval", "n_intervals")
+    )
+    def update_timestamp(_):
+        new_timestamp = db.latest_readings("time")[0]
+        ts.update_time(new_timestamp)
+        return ts.stamp
+
+    @app.callback(
+        Output("hist-plot", "figure"),
+        [Input("minute-interval", "n_intervals"),
+         Input("drop-0","value"),
+         Input("drop-1","value"),
+         Input("drop-2","value"),
+         Input("cust-slider","value")
+         ]
+    )
+    def update_scatter(n_intervals,datatype_selection, station_a, station_b,slider_values):
+        """
+        main update logic for all the plots. Triggered either by the 60second interval, or a selection of different
+        detectors and/or reading_type in the historic scatter plot
+        :param slider_values:
+        :param _:
+        :param selection_1:
+        :param selection_2:
+        :param selection_0:
+        :return:
+        """
+        ctx = dash.callback_context
+        trigger = ctx.triggered[0]["prop_id"]
+
+        [idx_left, idx_right] = slider_values
+
+        if datatype_selection == "speed":
+            datatype = "vehicle-speed"
+            unit = "kmh"
+        elif datatype_selection == "count":
+            datatype = "vehicle-count"
+            unit = "cars"
+        else:
+            datatype = "vehicle-gap-time"
+            unit = "seconds"
+
+        new_times_utc = db.n_latest_readings("time", n)[0]
+        new_data = db.n_latest_readings(datatype, n)
+        new_hist_dict = {s: l for s, l in zip(stations, new_data)}
+
+        new_primary_values = new_hist_dict[station_a]
+        new_secondary_values = new_hist_dict[station_b]
+
+        scatter.set_unit(unit)
+        scatter.set_labels(new_times_utc)
+
+        slider.set_labels(new_times_utc)
+
+        scatter.update_primary_fig(new_primary_values)
+        scatter.update_secondary_fig(new_secondary_values)
+
+        if "slider" not in trigger:
+            if "interval" in trigger:
+                new_start=scatter.start+1
+                new_end=scatter.end+1
+            else:
+                new_start=scatter.start
+                new_end=scatter.end
+
+            scatter.zoom_in(new_start,new_end)
+        else:
+            scatter.zoom_in(idx_left,idx_right)
+
+        return scatter.base_fig
+
     @app.callback(
         [Output("left-marker", "style"),
          Output("left-marker", "children"),
@@ -115,132 +181,7 @@ def init_callbacks(app, elements):
         text_left = text_left.strftime("%m/%d - %H:%M")
         text_right = text_right.strftime("%m/%d - %H:%M")
 
-
         return style_left, text_left, style_right,text_right
-
-    @app.callback(
-        [Output("hist-plot", "figure"),
-         Output('speed-live-graph', "figure"),
-         Output('count-live-graph', "figure"),
-         Output("gap-live-graph", "figure"),
-         Output("timestamp-text", "children"),
-         Output("table-div", "children")
-         ],
-        [Input("cust-slider", "value"),
-         Input("minute-interval", "n_intervals"),
-         Input("drop-1", "value"),
-         Input("drop-2", "value"),
-         Input("drop-0", "value")
-         ],
-        [
-         State("cust-slider","value")
-        ]
-    )
-    def update_plots(slider_values, _, selection_1, selection_2, selection_0, slider_value):
-        """
-        main update logic for all the plots. Triggered either by the 60second interval, or a selection of different
-        detectors and/or reading_type in the historic scatter plot
-        :param slider_values:
-        :param _:
-        :param selection_1:
-        :param selection_2:
-        :param selection_0:
-        :return:
-        """
-        ctx = dash.callback_context
-        trigger = ctx.triggered[0]["prop_id"]
-
-        if selection_0 == "speed":
-            datatype = "vehicle-speed"
-            unit = "kmh"
-        elif selection_0 == "count":
-            datatype = "vehicle-count"
-            unit = "cars"
-        else:
-            datatype = "vehicle-gap-time"
-            unit = "seconds"
-
-        if "drop" in trigger:
-
-            new_times_utc = db.n_latest_readings("time", n)[0]
-
-            new_data = db.n_latest_readings(datatype, n + 1)
-            new_timestamp = new_times_utc[-1]
-
-            old_timestamp = scatter.labels[-1]
-
-            if new_timestamp != old_timestamp:
-                new_times_utc = new_times_utc[:-1]
-                new_hist_dict = {s: l[:-1] for s, l in zip(stations, new_data)}
-            else:
-                new_times_utc = new_times_utc[1:]
-                new_hist_dict = {s: l[1:] for s, l in zip(stations, new_data)}
-
-            new_primary_values = new_hist_dict[selection_1]
-            new_secondary_values = new_hist_dict[selection_2]
-
-            scatter.set_unit(unit)
-            scatter.set_labels(new_times_utc)
-
-            scatter.update_primary_fig(new_primary_values)
-            scatter.update_secondary_fig(new_secondary_values)
-
-            new_start=scatter.start+1
-            new_end=scatter.end+1
-
-
-            slider.set_labels(new_times_utc)
-
-            scatter.zoom_in(new_start,new_end)
-
-
-        if "interval" in trigger:
-            new_times_utc = db.n_latest_readings("time", n)[0]
-            new_data = db.n_latest_readings(datatype, n)
-            new_hist_dict = {s: l for s, l in zip(stations, new_data)}
-
-            new_speed_values = db.latest_readings("vehicle-speed")
-            new_count_values = db.latest_readings("vehicle-count")
-            new_gap_values = db.latest_readings("vehicle-gap-time")
-
-            speedbar.set_data(new_speed_values, stations, "kmh")
-            countbar.set_data(new_count_values, stations, "cars")
-            gapbar.set_data(new_gap_values, stations, "s")
-
-            new_primary_values = new_hist_dict[selection_1]
-            new_secondary_values = new_hist_dict[selection_2]
-
-            scatter.set_unit(unit)
-            scatter.set_labels(new_times_utc)
-
-            slider.set_labels(new_times_utc)
-
-            scatter.update_primary_fig(new_primary_values)
-            scatter.update_secondary_fig(new_secondary_values)
-
-            if len(new_times_utc) > len(slider.labels):
-                new_start = scatter.start + 1
-                new_end = scatter.end + 1
-            else:
-                new_start = scatter.start
-                new_end = scatter.end
-
-            slider.set_labels(new_times_utc)
-            scatter.zoom_in(new_start, new_end)
-
-
-            ts.update_time(new_times_utc[-1])
-
-            table.df["speed (kmh)"] = new_speed_values
-            table.df["count (cars)"] = new_count_values
-            table.df["gap time (s)"] = new_gap_values
-
-            table.refresh()
-
-        if "slider" in trigger:
-            scatter.zoom_in(slider_value[0]+1, slider_value[1]+1)
-
-        return [scatter.base_fig, speedbar.fig, countbar.fig, gapbar.fig, ts.stamp, table.table]
 
     @app.callback(
         [Output("camera-modal", "is_open"),

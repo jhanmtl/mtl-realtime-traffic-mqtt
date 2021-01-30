@@ -16,8 +16,7 @@ import dash_core_components as dcc
 import dash_bootstrap_components as dbc
 import json
 import os
-import frontend_utils
-
+import datetime
 
 class CustomTable:
     def __init__(self, config, card_title, target_card):
@@ -384,7 +383,8 @@ class TimeStamp:
         self.card.children = [self.cardheader, html.Div(self.text, style={"margin": "auto"})]
 
     def update_time(self, newstamp):
-        newstamp = frontend_utils.date_convert(newstamp)
+        # newstamp = frontend_utils.date_convert(newstamp)
+        newstamp=datetime.datetime.strptime(newstamp,"%Y-%m-%dT%H:%M:%S")
         newstamp = newstamp.strftime("%H:%M:%S")
         self.stamp = newstamp
 
