@@ -22,7 +22,7 @@ def randomize():
 
     speed_min = np.random.randint(20, 50)
     speed_max = np.random.randint(speed_min, 100)
-    speed_noise = np.random.uniform(0.25, 1.0)
+    speed_noise = np.random.uniform(0.25, 0.5)
     speed_sim.set_params(speed_min, speed_max, speed_noise)
 
     count_min = np.random.randint(10, 30)

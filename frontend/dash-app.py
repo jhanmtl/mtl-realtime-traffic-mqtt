@@ -41,7 +41,7 @@ import json
 from layout_utils import *
 
 # configs and parameters
-n = 3000
+n = 5760
 
 countdown_duration = 15
 s_freq = 1010
