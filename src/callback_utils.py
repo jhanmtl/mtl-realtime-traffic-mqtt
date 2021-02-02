@@ -128,22 +128,10 @@ def init_callbacks(app, elements):
         scatter.set_unit(unit)
         scatter.set_labels(new_times_utc)
 
-        slider.set_labels(new_times_utc)
-
         scatter.update_primary_fig(new_primary_values)
         scatter.update_secondary_fig(new_secondary_values)
 
-        if "slider" not in trigger:
-            if "interval" in trigger:
-                new_start=scatter.start+1
-                new_end=scatter.end+1
-            else:
-                new_start=scatter.start
-                new_end=scatter.end
-
-            scatter.zoom_in(new_start,new_end)
-        else:
-            scatter.zoom_in(idx_left,idx_right)
+        scatter.zoom_in(idx_left,idx_right)
 
         return scatter.base_fig
 
@@ -152,19 +140,23 @@ def init_callbacks(app, elements):
          Output("left-marker", "children"),
          Output("right-marker", "style"),
          Output("right-marker", "children")],
-          Input('cust-slider', 'value'),
+        [Input('cust-slider', 'value'),
+         Input("minute-interval","n_intervals")
+         ]
     )
-    def update_slider(slider_values):
+    def update_slider(slider_values,_):
         """
         animates the handles and handle values of the slider
         :param slider_values:
         :param n_intervals:
         :return:
         """
+        new_times_utc = db.n_latest_readings("time", n)[0]
+        slider.set_labels(new_times_utc)
 
         [idx_left, idx_right] = slider_values
         offset_left = int(100 * (idx_left / n))
-        offset_right = int(100 * (idx_right / n))-8
+        offset_right = int(100 * (idx_right / n))-5
 
         style_left = {"marginLeft": "{}%".format(offset_left), "marginTop": "0px"}
         style_left.update(slider_config)
@@ -178,8 +170,8 @@ def init_callbacks(app, elements):
         text_left = frontend_utils.date_convert(text_left)
         text_right = frontend_utils.date_convert(text_right)
 
-        text_left = text_left.strftime("%m/%d - %H:%M")
-        text_right = text_right.strftime("%m/%d - %H:%M")
+        text_left = text_left.strftime("%H:%M:%S")
+        text_right = text_right.strftime("%H:%M:%S")
 
         return style_left, text_left, style_right,text_right
 

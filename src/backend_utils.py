@@ -126,5 +126,6 @@ class BimodalSim:
         val = self.f(x).flatten().item()
         noise = np.random.randint(0.0, int(self.noise_scale*self.target_max)+1)
         val *= noise
-        val = max(val, self.target_min)
-        return int(val)
+        # val = max(val, self.target_min)
+        val=np.clip(val,self.target_min,self.target_max)
+        return int(val.item())

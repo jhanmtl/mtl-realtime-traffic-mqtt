@@ -41,12 +41,11 @@ import json
 from layout_utils import *
 
 # configs and parameters
-n = 1000
+n = 3000
 
-countdown_duration = 5
-# m_freq = 15150
-m_freq=5050
+countdown_duration = 15
 s_freq = 1010
+m_freq=s_freq*countdown_duration
 
 cam_link = "http://www1.ville.montreal.qc.ca/Circulation-Cameras/GEN{}.jpeg"
 
@@ -98,7 +97,7 @@ hist_dict = {s: l for s, l in zip(stations, hist_data)}
 n=len(hist_utc)
 
 drange=int(0.1*len(hist_utc))
-mingap=int(0.1*len(hist_utc))
+mingap=int(0.05*len(hist_utc))
 
 
 # create app
@@ -212,7 +211,7 @@ def main():
     app.run_server(
         debug=debug,
         port=port,
-        dev_tools_ui=debug,
+        dev_tools_ui=False,
         host=host
     )
 

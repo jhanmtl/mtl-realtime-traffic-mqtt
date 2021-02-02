@@ -28,7 +28,7 @@ def generate_table_data(df, speed_values, count_values, gap_values):
     return table_data
 
 
-def date_convert(utc_time_str, target_tz="America/New_York"):
+def date_convert(utc_time_str, source_tz="America/New_York",target_tz="America/New_York"):
     [date, time] = utc_time_str.split("T")
 
     date = [int(i) for i in date.split("-")]
@@ -42,7 +42,7 @@ def date_convert(utc_time_str, target_tz="America/New_York"):
     second = time[2]
 
     utc_time = datetime.datetime(year, month, day, hour, minute, second)
-    utc_time = utc_time.replace(tzinfo=pytz.utc)
+    utc_time = utc_time.replace(tzinfo=pytz.timezone(source_tz))
     converted = utc_time.astimezone(pytz.timezone(target_tz))
 
     return converted
