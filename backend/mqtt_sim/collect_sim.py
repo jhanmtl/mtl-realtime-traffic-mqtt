@@ -1,4 +1,4 @@
-import backend_utils
+import backendtools
 import redis
 
 broker = 'broker.hivemq.com'
@@ -8,7 +8,7 @@ data_template = {'vehicle-gap-time': [], 'vehicle-speed': [], 'vehicle-count': [
 
 
 def main():
-    df = backend_utils.read_csv("detectors-simulated.csv")
+    df = backendtools.read_csv("detectors-simulated.csv")
     detector_topics = df['topics'].values.tolist()
     detector_ids=df['id'].values.tolist()
     value_types = ["vehicle-gap-time", "vehicle-count", "vehicle-speed"]
@@ -18,13 +18,13 @@ def main():
             active_topics.append((each_topic + each_type,0))
 
     db = redis.Redis()
-    backend_utils.initialize_db(db, detector_ids, data_template)
+    backendtools.initialize_db(db, detector_ids, data_template)
 
-    client = backend_utils.connect_mqtt(broker, port)
+    client = backendtools.connect_mqtt(broker, port)
     client.user_data_set(db)
     client.subscribe(active_topics)
 
-    client.on_message = backend_utils.on_message
+    client.on_message = backendtools.on_message
     client.loop_forever()
 
 

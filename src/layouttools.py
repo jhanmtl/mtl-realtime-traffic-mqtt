@@ -564,24 +564,26 @@ def init_map(df):
 def make_title():
     intro_desc = html.P(
         [
-            html.H4("Montreal Real Time Traffic via MQTT",
+            html.H6("Montreal Real Time Traffic via MQTT",
                     style={"textAlign": "center", "textDecoration": "underline", "marginBottom": "16px",
                            "color": "#b0b0b0"}
                     ),
             "This project performs realtime IoT data fetching and visualization from 9 thermal and radar sensors "
-            "embedded along Rue Notre-Dame by the City of Montreal for its Open Data initiative. ",
-            html.Br(),
-            html.Br(),
-            "Each sensor publishes traffic data regarding vehicle speed, count, and gaptime in 60 second intervals over"
-            " the mqtt protocol. Details about the data source can be found ",
+            "embedded along Rue Notre-Dame by Montreal for its Open Data initiative. ",
+            "Each sensor publishes traffic data in 60s intervals over"
+            " the MQTT protocol. Details about the data source can be found ",
             html.A("here. ",
                    href="https://donnees.montreal.ca/ville-de-montreal/circulation-mobilite-temps-reel",
                    target="_blank",
                    className="hlink"),
             html.Br(),
             html.Br(),
-            "Technology involved in building this application include paho-mqtt for data subscription, Dash for "
-            "realtime visualization, and Redis as an in-memory database. See more details at the ",
+            ' *Update Jan/2021: the sensors seem to be offline. Incoming data now simulated with'
+            'a separate MQTT publisher using a broker from hivemq at 15s intervals. See details in project repo.',
+            html.Br(),
+            html.Br(),
+            "Technology to build this application include paho-mqtt for data fetching, Dash for "
+            "realtime visualization, and Redis for data caching. See more details at the ",
             html.A("project repo.",
                    href="https://github.com/jhanmtl/mtl-realtime-traffic-mqtt",
                    target="_blank",

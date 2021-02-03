@@ -24,12 +24,12 @@ time to aggregate all the readings in the other lists according to the rules def
 the redis database under the appropriate det_id and value type, empty the list in the nested dict associated with
 the det_id/readinding_type, and reset the CreatedUtc list to a single element that's the new timestamp.
 
-Corresponding methods for performing the above tasks are identified below and also in ../src/backend_utils.py
+Corresponding methods for performing the above tasks are identified below and also in ../src/backendtools.py
 
 To run this script, make sure to first set ../src on the PYTHONPATH environment variable then have a
 locally running redis server and launch from temrinal with 'python mqtt-collect.py'
 """
-import backend_utils
+import backendtools
 import redis
 
 broker = 'mqtt.cgmu.io'
@@ -39,25 +39,25 @@ data_template = {'vehicle-gap-time': [], 'vehicle-speed': [], 'vehicle-count': [
 
 
 def main():
-    df = backend_utils.read_csv('detectors-active.csv')
+    df = backendtools.read_csv('detectors-active.csv')
     active_ids = df['id'].values.tolist()
-    active_topics = backend_utils.extract_topics(df)
+    active_topics = backendtools.extract_topics(df)
 
     db = redis.Redis(host='localhost', port=6379, db=0)
-    backend_utils.initialize_db(db, active_ids, data_template)
+    backendtools.initialize_db(db, active_ids, data_template)
 
     # constructs the nested dict structure that's operated on by the on_message callback for aggregating
     # mutliple readings of the same type for a given det_id
-    incoming_data = backend_utils.initialize_incoming_data(active_ids, value_types)
+    incoming_data = backendtools.initialize_incoming_data(active_ids, value_types)
 
-    client = backend_utils.connect_mqtt(broker, port)
+    client = backendtools.connect_mqtt(broker, port)
 
     # passes in the incoming_data to the client so it can be operated on during the on_message callback
     client.user_data_set([incoming_data, db])
 
     client.subscribe(active_topics)
 
-    client.on_message = backend_utils.on_message
+    client.on_message = backendtools.on_message
     client.loop_forever()
 
 if __name__ == "__main__":

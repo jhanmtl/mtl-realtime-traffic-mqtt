@@ -47,8 +47,8 @@ def on_message(client, userdata, msg):
     time = value_dict['CreateUtc']
     subj = extractor_detection_type(msg.topic)
 
-    maxsize = 6000
-    minsize = 5760
+    maxsize = 300
+    minsize = 240
 
     existing_data = json.loads(userdata.get(det_id))
     existing_sizes = [len(existing_data[k]) for k in existing_data]

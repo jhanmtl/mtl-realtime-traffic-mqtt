@@ -1,7 +1,7 @@
 import random
 import time
 from paho.mqtt import client as mqtt_client
-import backend_utils
+import backendtools
 import datetime
 import pytz
 import argparse
@@ -9,11 +9,10 @@ import json
 import pandas as pd
 import numpy as np
 
-df = pd.read_csv("../data/bimodal_dist.csv")
 
-speed_sim = backend_utils.OneTrough()
-gaptime_sim = backend_utils.OneTrough()
-count_sim = backend_utils.TwoPeaks()
+speed_sim = backendtools.OneTrough()
+gaptime_sim = backendtools.OneTrough()
+count_sim = backendtools.TwoPeaks()
 
 def randomize():
     global speed_sim
@@ -93,7 +92,7 @@ def main():
     pause = int(args.t)
 
     # ================== setting up the topics =====================
-    df = backend_utils.read_csv("detectors-simulated.csv")
+    df = backendtools.read_csv("detectors-simulated.csv")
     ids = df['topics'].values.tolist()
     value_types = ["vehicle-gap-time", "vehicle-count", "vehicle-speed"]
     topics = []

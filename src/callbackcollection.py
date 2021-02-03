@@ -5,7 +5,7 @@ plots of the dashboard with newly written data from the Redis database
 
 """
 import dash
-import frontend_utils
+import frontendtools
 import dash_html_components as html
 from dash.dependencies import Input, Output, State
 
@@ -167,8 +167,8 @@ def init_callbacks(app, elements):
         text_left = slider.labels[idx_left]
         text_right = slider.labels[idx_right]
 
-        text_left = frontend_utils.date_convert(text_left)
-        text_right = frontend_utils.date_convert(text_right)
+        text_left = frontendtools.date_convert(text_left)
+        text_right = frontendtools.date_convert(text_right)
 
         text_left = text_left.strftime("%H:%M:%S")
         text_right = text_right.strftime("%H:%M:%S")

@@ -22,7 +22,7 @@ Certain graphic elements are improved by using dash-bootstrap-components. The st
 nested rows and columns based on bootstrap grids.
 
 Native dash core components for plotting such as Scatter and Bar are reassgined to wrapper classes in
-../src/layout_utils.py to place the plotting and data update logic in one entity. In most cases it makes the callback
+../src/layouttools.py to place the plotting and data update logic in one entity. In most cases it makes the callback
 managment for updating the plots much easier. Though whether it is a necessary practice is still tbd.
 
 To run this dashboard, make sure to set ../src on the PYTHONPATH environment variable and launch from temrinal
@@ -30,18 +30,18 @@ with 'python dash-app.py'
 
 """
 import dash
-import layout_utils
+import layouttools
 import argparse
 from dash.dependencies import Input, Output, State
 
-import frontend_utils
-import callback_utils
+import frontendtools
+import callbackcollection
 import pandas as pd
 import json
-from layout_utils import *
+from layouttools import *
 
 # configs and parameters
-n = 5760
+n = 240
 
 countdown_duration = 15
 s_freq = 1010
@@ -58,8 +58,6 @@ with open("./assets/mapdata.json", "r") as jfile:
 with open("./assets/slider_config.json", "r") as jfile:
     slider_config = json.load(jfile)
 
-with open("./assets/desc.txt", "r") as tfile:
-    desc = tfile.readlines()[0]
 
 # dash intervals for countdown spinner (1s interval) and update plots with new data from redis (60s interval)
 minterval = dcc.Interval(
@@ -82,7 +80,7 @@ streets = df["corner_st2"].values.tolist()
 streets = {s: st for s, st in zip(stations, streets)}
 
 # connect to redis, uses wrapper class for pyredis's Redis class from frontend_utils
-db = frontend_utils.RedisDB()
+db = frontendtools.RedisDB()
 
 # get readings
 speed_values = db.latest_readings("vehicle-speed")
@@ -104,7 +102,7 @@ mingap=int(0.05*len(hist_utc))
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.DARKLY], title="mqtt-real", update_title=None)
 
 # init layout (empty cards, but in correct placement) with wrapper classes from layout_utils
-layout, left_column, right_column = layout_utils.init_layout()
+layout, left_column, right_column = layouttools.init_layout()
 
 # get specified cards by name
 title_card = right_column.get_subpanel_by_id("title-pane").children
@@ -120,18 +118,18 @@ table_card = left_column.get_subpanel_by_id("aux").children
 
 # populate cards with texts and/or maps and plots with wrapper definitions or classes from layout_utils
 
-title_card.children = layout_utils.make_title()
+title_card.children = layouttools.make_title()
 spinner = CountdownSpinner(plot_config, "seconds to next update", refresh_card, "pie-graph")
 ts = TimeStamp(plot_config, "readings as of ", timestamp_card)
 ts.update_time(timestamp)
 
-camera_card.children = layout_utils.make_modal(plot_config, stations)
+camera_card.children = layouttools.make_modal(plot_config, stations)
 
 table = CustomTable(plot_config, "detector metrics summary", table_card)
-table_data = frontend_utils.generate_table_data(df, speed_values, count_values, gap_values)
+table_data = frontendtools.generate_table_data(df, speed_values, count_values, gap_values)
 table.set_data(table_data)
 
-map_fig, map_data = layout_utils.init_map(df)
+map_fig, map_data = layouttools.init_map(df)
 map_card.figure = map_fig
 map_fig.update_layout(paper_bgcolor="gray", margin=dict(l=0, r=0, b=0, t=0))
 
@@ -145,8 +143,8 @@ gapbar.set_data(gap_values, stations, "s")
 
 # the historic scatter plot is more involved with the choice to choose 2 stations and a data type to compare
 # initially start with station1, station2, and vehicle speed
-cardheader = layout_utils.make_header("historic data over 24 hrs - use sliders and dropdown to select range and type",
-                                      plot_config)
+cardheader = layouttools.make_header("historic data over 24 hrs - use sliders and dropdown to select range and type",
+                                     plot_config)
 
 scatter = CustomScatter(plot_config)
 slider = CustomSlider(default_range=drange, min_gap=mingap)
@@ -172,7 +170,7 @@ hist_card.children = [cardheader, dropdown.layout, slider.layout, scatter.graph]
 # assign populated layout to app, along with interval components for updating
 app.layout = html.Div([layout, minterval, sinterval])
 
-# current way to pass objects so that they can be used by callback methods in the callback_utils.py module
+# current way to pass objects so that they can be used by callback methods in the callbackcollection.py module
 # probably a better way exists, to be investigated in future
 
 elements = {
@@ -194,7 +192,7 @@ elements = {
     "streets": streets
 }
 
-callback_utils.init_callbacks(app, elements)
+callbackcollection.init_callbacks(app, elements)
 
 
 def main():

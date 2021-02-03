@@ -1,6 +1,0 @@
-This project is a technological demonstration of using dash and paho-mqtt to collect realtime data from remote IoT devices and visualize them in a useful interface that performs live updating.
-<br><br/>
-Data source for this project comes from a pilot project initiated by the City of Montreal during the 2017 ITS World Congress that placed thermal and radar sensors along several main roads in the city for gauging realtime traffic activity. Of the initial 30+ sensors, 9 remains functional and are located at popular intersections along Rue Notre-Dame Est. Each of these sensors publishes data related to vehicle speed, count, and gaptime at a 60s interval using the mqtt protocol. More details regarding the data source can be found here, as part of Montreal's Donne Ouvertes (Open Data) initiative.
-
-The project consists of two parts: a dedicated mqtt client program subscribes to the topics published by the 9 functioning sensors and stores them in a local Redis database. data for each sensor is limited to the previous 24hrs, or 1440 readings.
-t
