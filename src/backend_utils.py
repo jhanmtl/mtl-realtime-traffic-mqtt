@@ -100,31 +100,32 @@ def read_csv(fname):
     return df
 
 
-class BimodalSim:
-    def __init__(self, df, inverse=False):
-        self.df = df
-        x = df['time']
-        y = df['value']
-        y = y / np.max(y)
-        if inverse:
-            y = 1 / y
+class TwoPeaks:
+    def __init__(self):
+        self.minval = None
+        self.maxval = None
+        self.wl = np.pi / 15
+        self.noise = None
+        self.amplitude=None
 
-        self.base_min = np.min(y)
-        self.base_max = np.max(y)
-        self.target_min=None
-        self.target_max=None
-        self.noise_scale=None
-
-        self.f = interp1d(x, y, kind='cubic')
-
-    def set_params(self, target_min, target_max, noise_scale):
-        self.target_min = target_min
-        self.target_max = target_max
-        self.noise_scale = noise_scale
+    def set_params(self, minval, maxval):
+        self.minval = minval
+        self.maxval = maxval
+        self.amplitude = (self.maxval - self.minval) / 2
 
     def generate(self, x):
-        val = self.f(x).flatten().item()
-        noise = np.random.randint(0.0, int(self.noise_scale*self.target_max)+1)
-        val *= noise
-        val=np.clip(val,self.target_min,self.target_max)
-        return int(val.item())
+        self.noise = np.random.randint(0, 0.25 * self.maxval, dtype=np.int16)
+        val = self.amplitude * np.sin(self.wl * (x - self.minval)) + self.amplitude + self.minval
+        val += self.noise
+        return int(val)
+
+
+class OneTrough (TwoPeaks):
+    def __init__(self):
+        super().__init__()
+
+    def generate(self, x):
+        self.noise = np.random.randint(0, 0.25 * self.maxval, dtype=np.int16)
+        val = self.amplitude * np.sin(0.5 * self.wl * (x + 2 * self.minval)) + self.amplitude + self.minval
+        val += self.noise
+        return int(val)

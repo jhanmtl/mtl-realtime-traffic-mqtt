@@ -11,9 +11,9 @@ import numpy as np
 
 df = pd.read_csv("../data/bimodal_dist.csv")
 
-speed_sim = backend_utils.BimodalSim(df, inverse=True)
-gaptime_sim = backend_utils.BimodalSim(df, inverse=True)
-count_sim = backend_utils.BimodalSim(df)
+speed_sim = backend_utils.OneTrough()
+gaptime_sim = backend_utils.OneTrough()
+count_sim = backend_utils.TwoPeaks()
 
 def randomize():
     global speed_sim
@@ -21,26 +21,23 @@ def randomize():
     global gaptime_sim
 
     speed_min = np.random.randint(20, 50)
-    speed_max = np.random.randint(speed_min, 100)
-    speed_noise = np.random.uniform(0.25, 0.5)
-    speed_sim.set_params(speed_min, speed_max, speed_noise)
+    speed_max = np.random.randint(speed_min+1, 100)
+    speed_sim.set_params(speed_min, speed_max)
 
     count_min = np.random.randint(10, 30)
-    count_max = np.random.randint(count_min, 60)
-    count_noise = np.random.uniform(0.25, 1.0)
-    count_sim.set_params(count_min, count_max, count_noise)
+    count_max = np.random.randint(count_min+1, 60)
+    count_sim.set_params(count_min, count_max)
 
     gaptime_min = np.random.randint(15, 30)
-    gaptime_max = np.random.randint(gaptime_min, 180)
-    gaptime_noise = np.random.uniform(0.25, 1.0)
-    gaptime_sim.set_params(gaptime_min, gaptime_max, gaptime_noise)
+    gaptime_max = np.random.randint(gaptime_min+1, 180)
+    gaptime_sim.set_params(gaptime_min, gaptime_max)
 
 
 def generate_msg(desc, unit, sim):
     created_at = datetime.datetime.now(tz=pytz.timezone("America/New_York"))
     expires_at = created_at + datetime.timedelta(minutes=1)
 
-    sim_input = int(created_at.strftime("%H"))
+    sim_input = int(created_at.strftime("%M"))
     value = sim.generate(sim_input)
 
     created_at = created_at.strftime("%Y-%m-%dT%H:%M:%S")
