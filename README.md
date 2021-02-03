@@ -15,3 +15,10 @@ Check out the gif below, or better yet, [visit the live dashboard](http://54.237
 
 ![Alt Text](./data/gifs/update.gif)
 
+**Unfortunately, as of Jaunary 2021, these sensors seem to be offline. Considering that they were first installed as a 
+pilot project in the 2017 ITS World Congress, this seems like a reasonable lifespan (4 years).
+
+Therefore, to keep the dashboard supplied with meaningful data and exhibit the usage of MQTT protocols in realtime data
+visualization, a separate script was written (see ../mqtt_sim/pub_sim.py) that simulates the topics that the original
+sensors put out and then publishes them over the hivemq broker. 
+
