@@ -578,8 +578,7 @@ def make_title():
                    className="hlink"),
             html.Br(),
             html.Br(),
-            ' *Update Jan/2021: the sensors seem to be offline. Incoming data now simulated with'
-            'a separate MQTT publisher using a broker from hivemq at 15s intervals. See details in project repo.',
+            ' *Update Jan/21: sensors seem to be offline, simulating their data with a separate MQTT publisher',
             html.Br(),
             html.Br(),
             "Technology to build this application include paho-mqtt for data fetching, Dash for "
@@ -678,7 +677,7 @@ def init_scatter(scatter, slider, dropdown, db, n, stations, config):
     secondary_values = hist_dict["station 2"]
 
     cardheader = make_header(
-        "historic data over 24 hrs - use sliders and dropdown to select range and type",
+        "historic data over last 60 minutes - use sliders and dropdown to select range and type",
         config)
 
     scatter.set_unit("kmh")

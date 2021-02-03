@@ -143,7 +143,7 @@ gapbar.set_data(gap_values, stations, "s")
 
 # the historic scatter plot is more involved with the choice to choose 2 stations and a data type to compare
 # initially start with station1, station2, and vehicle speed
-cardheader = layouttools.make_header("historic data over 24 hrs - use sliders and dropdown to select range and type",
+cardheader = layouttools.make_header("historic data over last 60 minutes - use sliders and dropdown to select range and type",
                                      plot_config)
 
 scatter = CustomScatter(plot_config)
